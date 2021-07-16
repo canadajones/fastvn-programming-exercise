@@ -25,7 +25,9 @@ enum position : uint {
 	bottom,
 };
 
-struct positionMapping {
+
+
+struct PositionMapping {
 	public:
 	std::pair<double, double> srcPos;
 	uint srcWidth;
@@ -104,8 +106,11 @@ struct Frame {
 	public:
 		std::string textDialogue;
 		Character& storyCharacter;
+		Image bg;
 	public:
-		Frame(std::string dialogue, Character& character) : textDialogue{dialogue}, storyCharacter{character} {
+		Frame(std::string dialogue, Character& character, Image& img) : textDialogue{dialogue}, storyCharacter{character}, bg(img) {
+		}
+		Frame(std::string dialogue, Character& character) : textDialogue{dialogue}, storyCharacter{character}, bg(nullptr) {
 		}
 
 		Frame() = delete;

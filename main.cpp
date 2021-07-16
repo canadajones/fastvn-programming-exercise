@@ -7,7 +7,10 @@
 #include <fstream>
 #include <stdexcept>
 #include <utility>
+#include <functional>
 
+
+#include <cmath>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_video.h>
@@ -30,6 +33,10 @@ using std::endl; //NOLINT(misc-unused-using-decls)
 using namespace vnpge;
 
 typedef unsigned int uint;
+
+void brkpoint() {
+	return;
+}
 
 class SDLManager {
 	private:
@@ -104,54 +111,75 @@ class SDLManager {
 	}
 };
 
-std::pair<int, int> getPixelPosfromPosition(position pos, std::pair<uint, uint> src, std::pair<uint, uint> dest){
-	uint srcWidth = src.first;
-	uint srcHeight = src.second;
-	uint destWidth = dest.first;
-	uint destHeight = dest.second;
 
-	// TODO: Implement the other position enums
+class DialogueFont {
+	private:
+		std::shared_ptr<TTF_Font> font;
 
-	if (pos == middle_bottom) {
-		// We want to position along the bottom, aligning the middle of the source with the middle of the destination.
-		// To do this, we need to map between the local coordinate system of the surface and the global reference coordinate system of the window.
-		// We need to know the reference coordinates of the origo to correctly place the image, as that is where the blitter paints from.
-		// Therefore, first get the horizontal distance between the middle and the edge.
-		uint srcEdgeMiddleDistance = srcWidth / 2;
-
-		// Find the horizontal middle pixel of the destination
-		uint destMiddleX = destWidth / 2;
-
-		// Now, horizontally, we will assume that the coordinates of these points (linex, really) are coincident.
-		// In other words, srcMiddleLocalX = windowMiddleX.
-		// However, we want to know the destination position of the surface local origo.
-		// Given the definition of srcMiddleLocalX earlier, we could say that srcMiddleLocalX = srcOrigoX + srcEdgeMiddleDistance,
-		// This gives srcOrigoX + srcEdgeMiddleDistance = destMiddleX.
-		// Or, in other words, srcOrigoX = destMiddleX - srcEdgeMiddleDistance.
-		uint srcOrigoX = destMiddleX - srcEdgeMiddleDistance;
-
-		// We'll do something similar for the vertical position.
-		// The bottom-most point of the source is locally the point that's furthest away from the local origo vertically.
-		// This would be the height (defined earlier).
-	
-		// This we want to be coincident with the bottom of the destination, which is, similarly, positioned at the global y-coordinate equal to the window height.
-		uint destBottomY = destHeight;
-
-		// So far, we have destBottomY = srcBottomLocalY.
-		// Now, since the origo + height is the lowest point, we can say that srcOrigoY + srcHeight = srcBottomLocalY.
-		// This gives srcOrigoY + srcHeight = destBottomY
-		// In other words, srcOrigoY = destBottomY - srcHeight
-
-		uint srcOrigoY = destBottomY - srcHeight;
-
-
-		return std::pair<uint, uint>(srcOrigoX, srcOrigoY);
-	}
-
-	return std::pair<uint, uint>(0,0);
+	public:
+		DialogueFont(std::string name, uint ptsize) : font{TTF_OpenFontIndex(name.c_str(), ptsize, 0), TTF_CloseFont} {
+		}
+		const TTF_Font* getFont() const {
+			return font.get();
+		}
+		TTF_Font* getFont() {
+			return font.get();
+		}
 };
 
-std::pair<int, int> getPixelPosfromPosition(positionMapping posMap) {
+
+class TextBox {
+	private:
+	// Shouldn't really change, except for drastic changes in resolution (akin to changing devices)
+	// The widths and heights in this should be ignored, but attempts should be made to keep them up to date with the surface 
+
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+	PositionMapping posMap = {
+		.srcPos = {0, 0},
+		.destPos = {0, 0.75}
+	};
+	#pragma GCC diagnostic pop 
+
+	// Dimensions relative to "screen" dimensions (it's really the surface dimensions, but realistically it's going to be the screen surface)
+	std::pair<double, double> relDimensions;
+
+	// Changes with resolution when resizing window
+	std::shared_ptr<SDL_Surface> box;
+	
+
+	// May change at an arbitrary time
+	DialogueFont font;
+	
+	// Regenerated every time it is gotten
+	std::shared_ptr<SDL_Surface> textSurface;
+	
+	
+
+	public:
+	
+	TextBox(SDL_Surface* screenSurface, std::function<SDL_Surface* (SDL_Surface*, std::pair<double, double>)> boxGenerator) :
+		relDimensions{1.0, 0.25}, box{boxGenerator(screenSurface, relDimensions), SDL_FreeSurface}, font{"BonaNova-Italic.ttf", 40}, textSurface{nullptr} {
+		};
+
+	PositionMapping getPosMap() {
+		return posMap;
+	}
+	SDL_Surface* getBox() {
+		return box.get();
+	};
+	
+	SDL_Surface* generateDisplayText(std::string text) {
+		SDL_Color color = {255, 255, 255, 255};
+		
+		textSurface.reset(TTF_RenderUTF8_Blended(font.getFont(), text.c_str(), color));
+
+		return textSurface.get();
+	};
+
+};
+
+std::pair<int, int> getPixelPosfromPosition(PositionMapping& posMap) {
 
 	// It contains a pair of points, plus the widths and heights of the two surfaces
 	// The points are in the form of normalised doubles, where 0,0 is the top left corner,
@@ -188,9 +216,9 @@ std::pair<int, int> getPixelPosfromPosition(positionMapping posMap) {
  * @param scale_percentage Percentage points to scale the source by before blitting.
  * @return The return status code of the underlying SDL_BlitScaled function. 
  */
-int blitImageConstAspectRatio(Image& src, Image& dest, position destPos, uint scale_percentage = 100) {
+int blitImageConstAspectRatio(Image& src, Image& dest, PositionMapping posMap, uint scale_percentage = 100) {
 	
-	// The SDL gods demand a position sacrifice, and so I am obliged to obey
+	// The SDL gods demand a position sacrifice
 	SDL_Rect pos;
 	
 	// Convenience variables
@@ -221,24 +249,24 @@ int blitImageConstAspectRatio(Image& src, Image& dest, position destPos, uint sc
 	// In cases of (hypothetical) float distortion, one of these checks might (hypothetically) fail, but both shouldn't
 	// Therefore there is an or here, though it is highly unlikely it would come to use.
 	if (srcWidthDivHeightRatio < destWidthDivHeightRatio || srcHeightDivWidthRatio > destHeightDivWidthRatio) {
-		pos.h = static_cast<uint>(scale * dest.getSurface()->h);
-		pos.w = static_cast<uint>(scale * dest.getSurface()->h * srcWidthDivHeightRatio);
+		pos.h = static_cast<uint>(std::round(scale * dest.getSurface()->h));
+		pos.w = static_cast<uint>(std::round(scale * dest.getSurface()->h * srcWidthDivHeightRatio));
 	}
 	else {
-		pos.h = static_cast<uint>(scale * dest.getSurface()->w * srcHeightDivWidthRatio);
-		pos.w = static_cast<uint>(scale * dest.getSurface()->w);
+		pos.h = static_cast<uint>(std::round(scale * dest.getSurface()->w * srcHeightDivWidthRatio));
+		pos.w = static_cast<uint>(std::round(scale * dest.getSurface()->w));
 	}
 
-	positionMapping posMap = {
-		.srcPos = {0.5, 1},
+	// Filling in widths and heights
+	posMap = {
+		.srcPos = posMap.srcPos,
 		.srcWidth = static_cast<uint>(pos.w),
 		.srcHeight = static_cast<uint>(pos.h),
 
-		.destPos = {0.5, 1},
+		.destPos = posMap.destPos,
 		.destWidth = static_cast<uint>(dest.getSurface()->w),
 		.destHeight = static_cast<uint>(dest.getSurface()->h)
 	};
-
 	// Get x and y coordinates of the screen to be blitted
 	std::pair<int, int> xy = getPixelPosfromPosition(posMap);
 
@@ -251,121 +279,76 @@ int blitImageConstAspectRatio(Image& src, Image& dest, position destPos, uint sc
 	return SDL_BlitScaled(src.getSurface(), nullptr, dest.getSurface(), &pos);
 };
 
-int blitImageConstAspectRatio(Frame& frm, Image& img2, position pos, uint scale = 0) {
-	return blitImageConstAspectRatio(frm.storyCharacter.charImage, img2, pos, scale);
+
+// Default simple text box
+SDL_Surface* makeTextBox(SDL_Surface* screenSurface, std::pair<double, double> relDimensions) {
+	
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSurface->w, screenSurface->h * 0.2, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	#else
+	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSurface->w*relDimensions.first, screenSurface->h*relDimensions.second, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	#endif
+
+	if (textBoxSurface == nullptr) {
+		std::string err = "Surface could not be created! SDL_Error: "; 
+		throw std::runtime_error(err.append(SDL_GetError()));
+	}
+	
+	SDL_Rect textBox = {
+		.x = 0,
+		.y = 0,
+		.w = textBoxSurface->w,
+		.h = textBoxSurface->h
+	};
+
+	// Fill with a transparent white
+	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0xFF, 0xFF, 0xFF, 0x7F));
+
+	textBox.x += 4;
+	textBox.y += 4;
+	textBox.w -= 8;
+	textBox.h -= 8;
+
+	// Fill with a transparent black inside the other rectangle, thereby creating a white border
+	// Note that FillRect does not blend alphas, so this alpha replaces the white's
+	// This is actually desirable, since the colours should have different alphas in order to feel equally transparent
+	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0x30, 0x30, 0x30, 0xAF));
+
+	return textBoxSurface;
 };
 
-class DialogueFont {
-	private:
-	std::shared_ptr<TTF_Font> font;
+void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) {
 
-	public:
-	DialogueFont(std::string name, uint ptsize) : font{TTF_OpenFontIndex(name.c_str(), ptsize, 0), TTF_CloseFont} {
-	}
-	const TTF_Font* getFont() const {
-		return font.get();
-	}
-	TTF_Font* getFont() {
-		return font.get();
-	}
+	PositionMapping posMap = textBox.getPosMap();
+	posMap = {
+		.srcPos = posMap.srcPos,
+		.srcWidth = static_cast<uint>(textBox.getBox()->w),
+		.srcHeight = static_cast<uint>(textBox.getBox()->h),
+
+		.destPos = posMap.destPos,
+		.destWidth = static_cast<uint>(screenSurface->w),
+		.destHeight = static_cast<uint>(screenSurface->h)
+	};
+
+	std::pair<uint, uint> xy = getPixelPosfromPosition(posMap);
+
+	SDL_Rect pos = {
+		.x = static_cast<int>(xy.first),
+		.y = static_cast<int>(xy.second),
+		.w = textBox.getBox()->w,
+		.h = textBox.getBox()->h,
+	};
+
+	SDL_BlitSurface(textBox.getBox(), nullptr, screenSurface, &pos);
+
+	// TODO: make this relative to the screen
+	pos.x += 30;
+	pos.y += 30;
+
+	SDL_BlitSurface(textBox.generateDisplayText(text), nullptr, screenSurface, &pos);
 };
 
-
-
-void brkpoint() {
-	return;
-}
-
-
-int main() {
-	SDLManager SDLInfo;
-
-	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
-	SDL_Window* window = SDLInfo.getWindow();
-
-	Image& screen = SDLInfo.getScreenImage();
-
-
-	
-
-	SDL_FillRect(screenSurface, nullptr, SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
-
-	//Apply the image
-	SDL_BlitSurface(nullptr, nullptr, screenSurface, nullptr);
-	
-	//Update the surface
-	SDL_UpdateWindowSurface(window);
-
-	Chapter test = initTest();
-
-	DialogueFont bona{"BonaNova-Italic.ttf", static_cast<uint>(screenSurface->h * 0.04)};
-
-	SDL_Color color = {255, 255, 255, 255};
-	
-	for (auto& frame : test.storyFrames) {
-
-		SDL_FillRect(screenSurface, nullptr, SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
-
-		blitImageConstAspectRatio(frame, screen, middle_bottom, 80);
-
-
-
-
-		brkpoint();
-		#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSurface->w, screenSurface->h * 0.2, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-		#else
-		SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSurface->w, screenSurface->h * 0.2, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-		#endif
-
-		if (textBoxSurface == nullptr) {
-			std::string err = "Surface could not be created! SDL_Error: "; 
-			throw std::runtime_error(err.append(SDL_GetError()));
-		}
-		{
-			SDL_Rect textBox = {
-				.x = 0,
-				.y = 0,
-				.w = textBoxSurface->w,
-				.h = textBoxSurface->h
-			};
-
-			SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0xFF, 0xFF, 0xFF, 0x7F));
-
-			textBox.x += 4;
-			textBox.y += 4;
-			textBox.w -= 8;
-			textBox.h -= 8;
-			SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0x30, 0x30, 0x30, 0xAF));
-		}
-		{
-			SDL_Rect tempPos = {
-				.x = 0,
-				.y = static_cast<int>(screenSurface->h * 0.8),
-				.w = 0,
-				.h = 0
-			};
-
-			SDL_BlitSurface(textBoxSurface, nullptr, screenSurface, &tempPos);
-		
-			tempPos = {
-				.x = tempPos.x + 30, 
-				.y = tempPos.y + 30, 
-				.w = 0, 
-				.h = 0
-			};
-			SDL_Surface* text = TTF_RenderUTF8_Blended(bona.getFont(), frame.textDialogue.c_str(), color);
-			SDL_BlitSurface(text, nullptr, screenSurface, &tempPos);
-		}
-		
-		
-		SDL_UpdateWindowSurface(window);
-		
-		SDL_Delay(1000);
-	}
-	
-	// TODO:
-	// Player input
+void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 	/* Render loop:
 	   	
 		Background
@@ -383,9 +366,66 @@ int main() {
 			|- Keymaps
 			|- Mouse clickies
 			|- Menu
-		
 	*/
 
+	// Initial setup
+	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
+	SDL_Window* window = SDLInfo.getWindow();
+	Image& screen = SDLInfo.getScreenImage();
+
+	
+
+	// Background
+
+	SDL_FillRect(screenSurface, nullptr, SDL_MapRGB(screenSurface->format, 0x00, 0x00, 0x00));
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+	// Dimensions in posMaps are ignored in blitImageConstAspectRatio
+	PositionMapping posMap = {
+		.srcPos = {0.5, 0.5},
+		.destPos = {0.5, 0.5},
+	};
+	
+	blitImageConstAspectRatio(curFrame.bg, screen, posMap, 100);
+
+	// Characters
+	
+	posMap = {
+		.srcPos = {0.5, 1},
+		.destPos = {0.5, 1},
+	};
+	#pragma GCC diagnostic pop
+	blitImageConstAspectRatio(curFrame.storyCharacter.charImage, screen, posMap, 80);
+
+	renderText(screen.getSurface(), textBox, curFrame.textDialogue);
+	
+	SDL_UpdateWindowSurface(window);
+
+}
+
+
+
+int main() {
+	SDLManager SDLInfo;
+
+	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
+	
+
+	Chapter test = initTest();
+
+	TextBox textBox = {screenSurface, makeTextBox};
+
+	
+
+	for (auto& frame : test.storyFrames) { 
+		
+		renderFrame(SDLInfo, frame, textBox);
+		SDL_Delay(1000);
+	}
+
+	// TODO:
+	// Render loop
+	// Player input
 	// Make a loader at some point, though after the main displayer works
 
 

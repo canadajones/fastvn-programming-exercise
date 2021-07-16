@@ -15,8 +15,9 @@ Chapter initTest() {
 
 	Chapter main{"test", std::vector<Character>{Character("Eclaire", "eclaire2.png")}, std::vector<Frame>{}};
 
+	Image bg{"lake.jpg"};
 	for (uint64_t i = 0; i < 5; i++) {
-		main.storyFrames.push_back(Frame(dialogues[i], main.storyCharacters[0]));
+		main.storyFrames.push_back(Frame(dialogues[i], main.storyCharacters[0], bg));
 	}
 	
 	std::cout << "end_init_test" << std::endl;
