@@ -1,4 +1,3 @@
-#include <memory>
 #define SDL_MAIN_HANDLED
 
 #include <iostream>
@@ -8,7 +7,8 @@
 #include <stdexcept>
 #include <utility>
 #include <functional>
-
+#include <iterator>
+#include <memory>
 
 #include <cmath>
 
@@ -16,6 +16,8 @@
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keycode.h>
 
 #include <SDL2/SDL_image.h>
 
@@ -158,8 +160,8 @@ class TextBox {
 
 	public:
 	
-	TextBox(SDL_Surface* screenSurface, std::function<SDL_Surface* (SDL_Surface*, std::pair<double, double>)> boxGenerator) :
-		relDimensions{1.0, 0.25}, box{boxGenerator(screenSurface, relDimensions), SDL_FreeSurface}, font{"BonaNova-Italic.ttf", 40}, textSurface{nullptr} {
+	TextBox(SDL_Surface* screenSurface, std::string font, std::function<SDL_Surface* (SDL_Surface*, std::pair<double, double>)> boxGenerator) :
+		relDimensions{1.0, 0.25}, box{boxGenerator(screenSurface, relDimensions), SDL_FreeSurface}, font{font, 40}, textSurface{nullptr} {
 		};
 
 	PositionMapping getPosMap() {
@@ -172,7 +174,7 @@ class TextBox {
 	SDL_Surface* generateDisplayText(std::string text) {
 		SDL_Color color = {255, 255, 255, 255};
 		
-		textSurface.reset(TTF_RenderUTF8_Blended(font.getFont(), text.c_str(), color));
+		textSurface.reset(TTF_RenderUTF8_Blended(font.getFont(), text.c_str(), color), SDL_FreeSurface);
 
 		return textSurface.get();
 	};
@@ -208,11 +210,11 @@ std::pair<int, int> getPixelPosfromPosition(PositionMapping& posMap) {
 };
 
 /**
- * @brief Blits an Image onto another at an enumerated position
+ * @brief Blits an Image onto another at a specified position
  * 
  * @param src Source image.
  * @param dest Destination image.
- * @param destPos Position at which to blit the image.
+ * @param posMap Position mapping between source and destination. Ignores widths and heights and uses those of the surfaces instead. 
  * @param scale_percentage Percentage points to scale the source by before blitting.
  * @return The return status code of the underlying SDL_BlitScaled function. 
  */
@@ -403,7 +405,38 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 
 }
 
-
+int handleEvents(std::vector<Frame>::iterator& it, std::vector<Frame>::iterator&& begin) {
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		switch (event.type) {
+			case SDL_KEYDOWN: {
+				switch(event.key.keysym.sym) {
+					case SDLK_ESCAPE: {
+						return 137;
+					}
+					break;
+					case SDLK_RIGHT:
+					case SDLK_c:
+					case SDLK_SPACE: {
+						if (!event.key.repeat) {
+							it = next(it);
+						}
+					}
+					break;
+					case SDLK_LEFT:
+					case SDLK_z: {
+						if (!event.key.repeat && it != begin) {
+							it = prev(it);
+						}
+					}
+					break;
+				}
+			}
+			break;
+		}
+	}
+	return 0;
+}
 
 int main() {
 	SDLManager SDLInfo;
@@ -413,19 +446,28 @@ int main() {
 
 	Chapter test = initTest();
 
-	TextBox textBox = {screenSurface, makeTextBox};
+	TextBox textBox = {screenSurface, "BonaNova-Italic.ttf", makeTextBox};
+	
+	
+	auto it = test.storyFrames.begin();
 
 	
+	while (true) { 
+		if (handleEvents(it, test.storyFrames.begin()) == 137) {
+			return 0;
+		}
 
-	for (auto& frame : test.storyFrames) { 
-		
-		renderFrame(SDLInfo, frame, textBox);
-		SDL_Delay(1000);
+		if (it == test.storyFrames.end()) {
+			return 0;
+		}
+	
+		renderFrame(SDLInfo, *it.base(), textBox);
+
+		SDL_Delay(10);
 	}
 
 	// TODO:
 	// Render loop
-	// Player input
 	// Make a loader at some point, though after the main displayer works
 
 
