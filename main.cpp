@@ -36,9 +36,7 @@ using namespace vnpge;
 
 typedef unsigned int uint;
 
-void brkpoint() {
-	return;
-}
+
 
 class SDLManager {
 	private:
@@ -114,72 +112,7 @@ class SDLManager {
 };
 
 
-class DialogueFont {
-	private:
-		std::shared_ptr<TTF_Font> font;
 
-	public:
-		DialogueFont(std::string name, uint ptsize) : font{TTF_OpenFontIndex(name.c_str(), ptsize, 0), TTF_CloseFont} {
-		}
-		const TTF_Font* getFont() const {
-			return font.get();
-		}
-		TTF_Font* getFont() {
-			return font.get();
-		}
-};
-
-
-class TextBox {
-	private:
-	// Shouldn't really change, except for drastic changes in resolution (akin to changing devices)
-	// The widths and heights in this should be ignored, but attempts should be made to keep them up to date with the surface 
-
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-	PositionMapping posMap = {
-		.srcPos = {0, 0},
-		.destPos = {0, 0.75}
-	};
-	#pragma GCC diagnostic pop 
-
-	// Dimensions relative to "screen" dimensions (it's really the surface dimensions, but realistically it's going to be the screen surface)
-	std::pair<double, double> relDimensions;
-
-	// Changes with resolution when resizing window
-	std::shared_ptr<SDL_Surface> box;
-	
-
-	// May change at an arbitrary time
-	DialogueFont font;
-	
-	// Regenerated every time it is gotten
-	std::shared_ptr<SDL_Surface> textSurface;
-	
-	
-
-	public:
-	
-	TextBox(SDL_Surface* screenSurface, std::string font, std::function<SDL_Surface* (SDL_Surface*, std::pair<double, double>)> boxGenerator) :
-		relDimensions{1.0, 0.25}, box{boxGenerator(screenSurface, relDimensions), SDL_FreeSurface}, font{font, 40}, textSurface{nullptr} {
-		};
-
-	PositionMapping getPosMap() {
-		return posMap;
-	}
-	SDL_Surface* getBox() {
-		return box.get();
-	};
-	
-	SDL_Surface* generateDisplayText(std::string text) {
-		SDL_Color color = {255, 255, 255, 255};
-		
-		textSurface.reset(TTF_RenderUTF8_Blended(font.getFont(), text.c_str(), color), SDL_FreeSurface);
-
-		return textSurface.get();
-	};
-
-};
 
 std::pair<int, int> getPixelPosfromPosition(PositionMapping& posMap) {
 
@@ -282,42 +215,7 @@ int blitImageConstAspectRatio(Image& src, Image& dest, PositionMapping posMap, u
 };
 
 
-// Default simple text box
-SDL_Surface* makeTextBox(SDL_Surface* screenSurface, std::pair<double, double> relDimensions) {
-	
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSurface->w, screenSurface->h * 0.2, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	#else
-	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSurface->w*relDimensions.first, screenSurface->h*relDimensions.second, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	#endif
 
-	if (textBoxSurface == nullptr) {
-		std::string err = "Surface could not be created! SDL_Error: "; 
-		throw std::runtime_error(err.append(SDL_GetError()));
-	}
-	
-	SDL_Rect textBox = {
-		.x = 0,
-		.y = 0,
-		.w = textBoxSurface->w,
-		.h = textBoxSurface->h
-	};
-
-	// Fill with a transparent white
-	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0xFF, 0xFF, 0xFF, 0x7F));
-
-	textBox.x += 4;
-	textBox.y += 4;
-	textBox.w -= 8;
-	textBox.h -= 8;
-
-	// Fill with a transparent black inside the other rectangle, thereby creating a white border
-	// Note that FillRect does not blend alphas, so this alpha replaces the white's
-	// This is actually desirable, since the colours should have different alphas in order to feel equally transparent
-	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0x30, 0x30, 0x30, 0xAF));
-
-	return textBoxSurface;
-};
 
 void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) {
 
@@ -347,7 +245,7 @@ void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) 
 	pos.x += 30;
 	pos.y += 30;
 
-	SDL_BlitSurface(textBox.generateDisplayText(text), nullptr, screenSurface, &pos);
+	SDL_BlitSurface(textBox.getText(), nullptr, screenSurface, &pos);
 };
 
 void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
@@ -405,7 +303,7 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 
 }
 
-int handleEvents(std::vector<Frame>::iterator& it, std::vector<Frame>::iterator&& begin) {
+int handleEvents(Chapter& chapter) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -419,14 +317,14 @@ int handleEvents(std::vector<Frame>::iterator& it, std::vector<Frame>::iterator&
 					case SDLK_c:
 					case SDLK_SPACE: {
 						if (!event.key.repeat) {
-							it = next(it);
+							chapter.nextFrame();
 						}
 					}
 					break;
 					case SDLK_LEFT:
 					case SDLK_z: {
-						if (!event.key.repeat && it != begin) {
-							it = prev(it);
+						if (!event.key.repeat) {
+							chapter.prevFrame();
 						}
 					}
 					break;
@@ -439,21 +337,17 @@ int handleEvents(std::vector<Frame>::iterator& it, std::vector<Frame>::iterator&
 }
 
 int main() {
+	
 	SDLManager SDLInfo;
-
+	
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
-	
 
-	Chapter test = initTest();
+	Chapter test = initTest(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
 
-	TextBox textBox = {screenSurface, "BonaNova-Italic.ttf", makeTextBox};
-	
-	
-	auto it = test.storyFrames.begin();
+	auto& it = test.it;
 
-	
 	while (true) { 
-		if (handleEvents(it, test.storyFrames.begin()) == 137) {
+		if (handleEvents(test) == 137) {
 			return 0;
 		}
 
@@ -461,7 +355,7 @@ int main() {
 			return 0;
 		}
 	
-		renderFrame(SDLInfo, *it.base(), textBox);
+		renderFrame(SDLInfo, *it.base(), test.textBox);
 
 		SDL_Delay(10);
 	}
