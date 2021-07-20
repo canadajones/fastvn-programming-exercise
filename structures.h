@@ -246,6 +246,7 @@ struct Frame {
 		Image bg;
 	public:
 		Frame(const MetaFrame& metaFrame, Character& character) : textDialogue(metaFrame.textDialogue), storyCharacter(character), bg({metaFrame.bg}) {};
+		Frame(const MetaFrame& metaFrame, Character& character, Image& img) : textDialogue(metaFrame.textDialogue), storyCharacter(character), bg{img} {};
 
 		Frame() = delete;
 };
@@ -268,51 +269,63 @@ struct Chapter {
 		std::vector<Frame> storyFrames;
 
 		TextBox textBox;
-		std::vector<Frame>::iterator it;
+		std::vector<Frame>::iterator curFrame;
 	public:
 		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames, AbsoluteDimensions pixelDimensions, std::string font, std::function<SDL_Surface* (AbsoluteDimensions, RelativeDimensions)> boxGenerator) : 
 		chapterName{name}, storyCharacters{demetaCharacterVec(metaCharacters)}, textBox{pixelDimensions, font, boxGenerator} {
-			
 			storyFrames.reserve(metaFrames.size());
-			std::cout << __FILE__ << " " << __LINE__ << std::endl;
 			std::unordered_map<std::string, Character&> charIDToRefMap;
-			std::cout << __FILE__ << " " << __LINE__ << std::endl;
+			std::unordered_map<std::string, Image> bgPathtoImageMap;
+			
 			{
 				std::vector<Character>::iterator it1 = storyCharacters.begin();
 				for (auto& metaChar : metaCharacters) {
 					charIDToRefMap.insert({metaChar.id, *it1.base()});
-					std::cout << __FILE__ << " " << __LINE__ << std::endl;
 					std::next(it1);
+					
 				}
 			}
+			
 			for (auto& metaFrame : metaFrames) {
 				if (charIDToRefMap.count(metaFrame.characterID)) {
-					std::cout << __FILE__ << " " << __LINE__ << std::endl;
-					storyFrames.push_back({metaFrame, charIDToRefMap.at(metaFrame.characterID)});
+					
+					if (!bgPathtoImageMap.count(metaFrame.bg)) {
+						bgPathtoImageMap.insert({metaFrame.bg, {metaFrame.bg}});
+					}
+					
+					storyFrames.emplace_back(metaFrame, charIDToRefMap.at(metaFrame.characterID), bgPathtoImageMap.at(metaFrame.bg));
+				}
+				else {
+					throw std::runtime_error("\033[1m\033[31mFatal error: Character ID '" + metaFrame.characterID + "' doesn't exist.\033[37m");
 				}
 				
 			}
-			std::cout << __FILE__ << " " << __LINE__ << std::endl;
-			it = storyFrames.begin();
-			std::cout << __FILE__ << " " << __LINE__ << std::endl;
-			textBox.generateDisplayText(it->textDialogue);	
+			
+			curFrame = storyFrames.begin();
+			
+			textBox.generateDisplayText(curFrame->textDialogue);	
+			
 		};
 
 	
 	std::vector<Frame>::iterator nextFrame() {
-		if (it != storyFrames.end()) {
-			it = std::next(it);
-			textBox.generateDisplayText(it->textDialogue);
+		if (curFrame != storyFrames.end()) {
+			curFrame = std::next(curFrame);
 		}
-		return it;
+		// Note that merging these two if statements causes the program to segfault upon chapter completion
+		// There's probably a neater way to fix this, but this is simple and works
+		if (curFrame != storyFrames.end()) {
+			textBox.generateDisplayText(curFrame->textDialogue);
+		}
+		return curFrame;
 	}
 
 	std::vector<Frame>::iterator prevFrame() {
-		if (it != storyFrames.begin()) {
-			it = std::prev(it);
-			textBox.generateDisplayText(it->textDialogue);
+		if (curFrame != storyFrames.begin()) {
+			curFrame = std::prev(curFrame);
+			textBox.generateDisplayText(curFrame->textDialogue);
 		}
-		return it;
+		return curFrame;
 	}
 };
 };

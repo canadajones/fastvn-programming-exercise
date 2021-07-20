@@ -10,6 +10,7 @@
 #include <iterator>
 #include <memory>
 
+#include <cassert>
 #include <cmath>
 
 #include <SDL2/SDL.h>
@@ -344,7 +345,7 @@ int main() {
 
 	Chapter test = initTest(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
 
-	auto& it = test.it;
+	auto& it = test.curFrame;
 
 	while (true) { 
 		if (handleEvents(test) == 137) {
@@ -354,7 +355,7 @@ int main() {
 		if (it == test.storyFrames.end()) {
 			return 0;
 		}
-	
+		assert(it.base() != nullptr);
 		renderFrame(SDLInfo, *it.base(), test.textBox);
 
 		SDL_Delay(10);

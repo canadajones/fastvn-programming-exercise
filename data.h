@@ -59,7 +59,7 @@ Chapter initTest(uint w, uint h) {
 	Image bg{"lake.jpg"};
 
 	for (uint64_t i = 0; i < 5; i++) {
-		metaFrames.push_back({dialogues[i], metaCharacters[0], bg});
+		metaFrames.emplace_back(dialogues[i], metaCharacters[0], bg);
 	}
 
 	Chapter main{"test", metaCharacters, metaFrames, {.w = w, .h = h}, "BonaNova-Italic.ttf", makeTextBox};
