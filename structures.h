@@ -36,14 +36,15 @@ enum position : uint {
 
 struct AbsolutePosition {
 	public:
-	double x;
-	double y;
+	int x;
+	int y;
+	
 };
 
 struct RelativePosition {
 	public:
-	int x;
-	int y;
+	double x;
+	double y;
 };
 
 struct AbsoluteDimensions {
@@ -60,11 +61,11 @@ struct RelativeDimensions {
 
 struct PositionMapping {
 	public:
-	std::pair<double, double> srcPos;
+	RelativePosition srcPos;
 	uint srcWidth;
 	uint srcHeight;
 
-	std::pair<double, double> destPos;
+	RelativePosition destPos;
 	uint destWidth;
 	uint destHeight;
 };
@@ -122,10 +123,21 @@ class TextBox {
 	 * @param boxGenerator A function accepting the absolute dimensions of the destination surface, as well as the relative dimensions this box occupies thereon.
 	 */
 	TextBox(AbsoluteDimensions surfDimensions, std::string font, std::function<SDL_Surface* (AbsoluteDimensions, RelativeDimensions)> boxGenerator) :
-		relDimensions{.w = 1.0, .h = 0.25}, box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, font{font, 40}, textSurface{nullptr} {};
+		relDimensions{.w = 1.0, .h = 0.25}, box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, font{font, 40}, textSurface{nullptr} {
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+			posMap = {
+				.srcPos = posMap.srcPos,
+				.srcWidth = static_cast<uint>(box->w),
+				.srcHeight = static_cast<uint>(box->h),
+				.destPos = posMap.destPos
+			};
+			#pragma GCC diagnostic pop
+
+		};
 
 
-	PositionMapping getPosMap() const {
+	const PositionMapping& getPosMap() const {
 		return posMap;
 	}
 	SDL_Surface* getBox() const {
@@ -163,7 +175,8 @@ class Image {
 		 */
 		Image(std::string location) : url(location), imageSurface{IMG_Load(url.c_str()), SDL_FreeSurface} {
 			if (imageSurface == nullptr) {
-				throw std::runtime_error("\033[1m\033[31mFatal error: Image '" + url + "' could not be loaded.\033[37m");
+				//throw std::runtime_error("\033[1m\033[31mFatal error: Image '" + url + "' could not be loaded.\033[37m");
+				std::cout << "\033[1m\033[31mFatal error: Image '" + url + "' could not be loaded.\033[37m" << std::endl;
 			}
 		};
 
@@ -217,9 +230,17 @@ struct Character {
 	public:
 		std::string name;
 		Image charImage;
+		std::unordered_map<std::string, Image> expressions;
 	public:
 		Character(std::string characterName, std::string imageURL) : name{characterName}, charImage{imageURL} {};
 		Character(const MetaCharacter& metaCharacter) : name(metaCharacter.name), charImage(metaCharacter.imageURL) {};
+		Character(std::string characterName, std::unordered_map<std::string, std::string> metaExpressions) : name(characterName) {
+			for (auto& metaExpression : metaExpressions) {
+				expressions.insert({metaExpression.first,{metaExpression.second}});
+			}
+			brkpoint();
+		};
+
 
 		Character() = default;
 

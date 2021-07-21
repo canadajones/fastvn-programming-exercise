@@ -50,19 +50,20 @@ SDL_Surface* makeTextBox(AbsoluteDimensions pixelDimensions, RelativeDimensions 
 Chapter initTest(uint w, uint h) {
 	std::string dialogues[5] = {"Thank you for participating in this test.", "If you can read this, then it probably worked", "Well, that's all for now.", "Love you!", "Goodbye!"};
 
+	Character susan = {"Susan", {{"susan-happy", "susan-happy.png"}, {"susan-sad", "susan-sad.png"}, {"susan-angry", "s-ang.png"}}};
 
 	TextBox textBox = {{.w = w, .h = h}, "BonaNova-Italic.ttf", makeTextBox};
 
 	std::vector<MetaCharacter> metaCharacters = {{"Eclaire", "eclaire2.png", "eclaire-0"}};
 	std::vector<MetaFrame> metaFrames = {};
 
-	Image bg{"lake.jpg"};
+	Image bg = {"lake.jpg"};
 
 	for (uint64_t i = 0; i < 5; i++) {
 		metaFrames.emplace_back(dialogues[i], metaCharacters[0], bg);
 	}
 
-	Chapter main{"test", metaCharacters, metaFrames, {.w = w, .h = h}, "BonaNova-Italic.ttf", makeTextBox};
+	Chapter main = {"test", metaCharacters, metaFrames, {.w = w, .h = h}, "BonaNova-Italic.ttf", makeTextBox};
 
 	
 	

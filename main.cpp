@@ -115,7 +115,7 @@ class SDLManager {
 
 
 
-std::pair<int, int> getPixelPosfromPosition(PositionMapping& posMap) {
+AbsolutePosition getPixelPosfromPosition(PositionMapping& posMap) {
 
 	// It contains a pair of points, plus the widths and heights of the two surfaces
 	// The points are in the form of normalised doubles, where 0,0 is the top left corner,
@@ -125,13 +125,13 @@ std::pair<int, int> getPixelPosfromPosition(PositionMapping& posMap) {
 	// Simply using the doubles would give an incorrect result, as it would be equivalent to dest_x/dest/width - src_x/src_width,
 	// which I hope is obvious wouldn't work. You can't just add and subtract percentages!
 
-	int srcLocalPixPosX = posMap.srcWidth * posMap.srcPos.first;
+	int srcLocalPixPosX = posMap.srcWidth * posMap.srcPos.x;
 
-	int srcLocalPixPosY = posMap.srcHeight * posMap.srcPos.second;
+	int srcLocalPixPosY = posMap.srcHeight * posMap.srcPos.y;
 
-	int destLocalPixPosX = posMap.destWidth * posMap.destPos.first;
+	int destLocalPixPosX = posMap.destWidth * posMap.destPos.x;
 
-	int destLocalPixPosY = posMap.destHeight * posMap.destPos.second;
+	int destLocalPixPosY = posMap.destHeight * posMap.destPos.y;
 
 	// Now that we have the variables unpacked, use them
 	// Technically, the src coordinates here are being used for their distance from the origin
@@ -140,7 +140,7 @@ std::pair<int, int> getPixelPosfromPosition(PositionMapping& posMap) {
 	int srcDestPixPosX = static_cast<uint>(destLocalPixPosX - srcLocalPixPosX);
 	int srcDestPixPosY = static_cast<uint>(destLocalPixPosY - srcLocalPixPosY);
 
-	return std::pair(srcDestPixPosX, srcDestPixPosY);
+	return {srcDestPixPosX, srcDestPixPosY};
 };
 
 /**
@@ -204,12 +204,12 @@ int blitImageConstAspectRatio(Image& src, Image& dest, PositionMapping posMap, u
 		.destHeight = static_cast<uint>(dest.getSurface()->h)
 	};
 	// Get x and y coordinates of the screen to be blitted
-	std::pair<int, int> xy = getPixelPosfromPosition(posMap);
+	AbsolutePosition xy = getPixelPosfromPosition(posMap);
 
 	
 
-	pos.x = xy.first;
-	pos.y = xy.second;
+	pos.x = xy.x;
+	pos.y = xy.y;
 
 
 	return SDL_BlitScaled(src.getSurface(), nullptr, dest.getSurface(), &pos);
@@ -231,11 +231,11 @@ void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) 
 		.destHeight = static_cast<uint>(screenSurface->h)
 	};
 
-	std::pair<uint, uint> xy = getPixelPosfromPosition(posMap);
+	AbsolutePosition xy = getPixelPosfromPosition(posMap);
 
 	SDL_Rect pos = {
-		.x = static_cast<int>(xy.first),
-		.y = static_cast<int>(xy.second),
+		.x = xy.x,
+		.y = xy.y,
 		.w = textBox.getBox()->w,
 		.h = textBox.getBox()->h,
 	};
