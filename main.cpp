@@ -296,7 +296,7 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 		.destPos = {0.5, 1},
 	};
 	#pragma GCC diagnostic pop
-	blitImageConstAspectRatio(curFrame.storyCharacter.charImage, screen, posMap, 80);
+	blitImageConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, posMap, 80);
 
 	renderText(screen.getSurface(), textBox, curFrame.textDialogue);
 	

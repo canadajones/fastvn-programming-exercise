@@ -216,11 +216,12 @@ struct MetaCharacter {
 		
 		std::string name;
 		
-		std::string imageURL;
+		std::unordered_map<std::string, std::string> metaExpressions;
 
 	public:
-		MetaCharacter(std::string characterName, std::string imageURL, std::string id ) : id(id), name{characterName}, imageURL{imageURL} {
-		}
+		MetaCharacter(std::string characterName, const std::unordered_map<std::string, std::string>& metaExpressions, std::string id ) 
+		: id(id), name{characterName}, metaExpressions{metaExpressions} {};
+
 
 		MetaCharacter() = delete;
 
@@ -229,32 +230,32 @@ struct MetaCharacter {
 struct Character {
 	public:
 		std::string name;
-		Image charImage;
 		std::unordered_map<std::string, Image> expressions;
 	public:
-		Character(std::string characterName, std::string imageURL) : name{characterName}, charImage{imageURL} {};
-		Character(const MetaCharacter& metaCharacter) : name(metaCharacter.name), charImage(metaCharacter.imageURL) {};
-		Character(std::string characterName, std::unordered_map<std::string, std::string> metaExpressions) : name(characterName) {
-			for (auto& metaExpression : metaExpressions) {
+		Character(const MetaCharacter& metaCharacter) : name(metaCharacter.name) {
+			for (auto& metaExpression : metaCharacter.metaExpressions) {
 				expressions.insert({metaExpression.first,{metaExpression.second}});
 			}
-			brkpoint();
+		};
+		Character(MetaCharacter&& metaCharacter) : name(metaCharacter.name) {
+			for (auto& metaExpression : metaCharacter.metaExpressions) {
+				expressions.insert({metaExpression.first,{metaExpression.second}});
+			}
 		};
 
-
-		Character() = default;
-
+		Character() = delete;
 };
+
 
 struct MetaFrame {
 	public:
 		std::string textDialogue;
 		std::string characterID;
+		std::string expression;
 		std::string bg;
 	public:
-		MetaFrame(std::string& dialogue, MetaCharacter& character, Image& img) : textDialogue{dialogue}, characterID{character.id}, bg(img.url) {
-		}
-		MetaFrame(std::string dialogue, MetaCharacter& character, std::string imgURL) : textDialogue{dialogue}, characterID{character.id}, bg(imgURL) {
+		MetaFrame(std::string dialogue, MetaCharacter& character, std::string exp, std::string imgURL) 
+		: textDialogue{dialogue}, characterID{character.id}, expression{exp}, bg(imgURL) {
 		}
 
 		MetaFrame() = delete;
@@ -264,10 +265,11 @@ struct Frame {
 	public:
 		std::string textDialogue;
 		Character& storyCharacter;
+		std::string expression;
 		Image bg;
 	public:
-		Frame(const MetaFrame& metaFrame, Character& character) : textDialogue(metaFrame.textDialogue), storyCharacter(character), bg({metaFrame.bg}) {};
-		Frame(const MetaFrame& metaFrame, Character& character, Image& img) : textDialogue(metaFrame.textDialogue), storyCharacter(character), bg{img} {};
+		Frame(const MetaFrame& metaFrame, Character& character, Image& img) 
+		: textDialogue(metaFrame.textDialogue), storyCharacter(character), expression(metaFrame.expression), bg{img} {};
 
 		Frame() = delete;
 };
@@ -292,9 +294,10 @@ struct Chapter {
 		TextBox textBox;
 		std::vector<Frame>::iterator curFrame;
 	public:
-		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames, AbsoluteDimensions pixelDimensions, std::string font, std::function<SDL_Surface* (AbsoluteDimensions, RelativeDimensions)> boxGenerator) : 
-		chapterName{name}, storyCharacters{demetaCharacterVec(metaCharacters)}, textBox{pixelDimensions, font, boxGenerator} {
+		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames, AbsoluteDimensions pixelDimensions, std::string font, std::function<SDL_Surface* (AbsoluteDimensions, RelativeDimensions)> boxGenerator) 
+		: chapterName{name}, storyCharacters{demetaCharacterVec(metaCharacters)}, textBox{pixelDimensions, font, boxGenerator} {
 			storyFrames.reserve(metaFrames.size());
+			
 			std::unordered_map<std::string, Character&> charIDToRefMap;
 			std::unordered_map<std::string, Image> bgPathtoImageMap;
 			
