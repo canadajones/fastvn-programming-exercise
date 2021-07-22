@@ -252,19 +252,20 @@ void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) 
 void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 	/* Render loop:
 	   	
-		Background
+		Background - x
 		Characters
 			|- Position
-			|- Expressions
+			|- Multiple in a frame
+			|- Expressions -x
 			|		|- Expression builder?
 			|- Animations?
 		Dialogue
-			|- Text box
-			|- Text
+			|- Text box - x
+			|- Text - x
 			|- Autofitting
 			|- Custom design?
 		Graphical interface
-			|- Keymaps
+			|- Keymaps - x?
 			|- Mouse clickies
 			|- Menu
 	*/
@@ -298,6 +299,7 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 	#pragma GCC diagnostic pop
 	blitImageConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, posMap, 80);
 
+	// Text
 	renderText(screen.getSurface(), textBox, curFrame.textDialogue);
 	
 	SDL_UpdateWindowSurface(window);
@@ -362,7 +364,6 @@ int main() {
 	}
 
 	// TODO:
-	// Render loop
 	// Make a loader at some point, though after the main displayer works
 
 

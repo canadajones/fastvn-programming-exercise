@@ -26,12 +26,24 @@ void brkpoint() {
 }
 
 namespace vnpge {
+
+// In the interest of documentation:
+// Declare things as struct if they could just as easily be constructed as a simple aggregate structure.
+// More formally, if the class
+// - does not provide any member or static functions, 
+// - does not declare any destructors or move/copy constructors,
+// - does not substantially check input for correctness in a way that a correctly coded external initialiser could miss 
+// then it may be declared as struct.
+// Otherwise, declare as class.
+// This doesn't actually matter in any way, since all access specifiers must be explicit.
+// But it allows for ascertaining whether a class is "simple" at a glance.
+
 enum position : uint {
 	left,
 	right,
 	middle_bottom,
 	top,
-	bottom,
+	bottom
 };
 
 struct AbsolutePosition {
@@ -105,7 +117,6 @@ class TextBox {
 	// Changes with resolution when resizing window
 	std::shared_ptr<SDL_Surface> box;
 	
-
 	// May change at an arbitrary time
 	DialogueFont font;
 	
@@ -167,7 +178,6 @@ class Image {
 		
 		std::shared_ptr<SDL_Surface> imageSurface;
 		 
-
 		/**
 		 * @brief Construct a new Image object from scratch.
 		 * Normal constructor to make a new Image. This will load the image pointed to by location, and will assign it to an SDL_Surface
@@ -208,7 +218,10 @@ class Image {
 		};
 
 };
-
+/**
+ * @brief Template for creating Characters
+ * Required to create Characters and MetaFrames, and by extension, Frames.
+ */
 struct MetaCharacter {
 	// Credit to ThePotatoGuy for the name/idea of this scheme
 	public:
@@ -217,8 +230,14 @@ struct MetaCharacter {
 		std::string name;
 		
 		std::unordered_map<std::string, std::string> metaExpressions;
-
 	public:
+		/**
+		 * @brief Construct a new MetaCharacter.
+		 * Template for creating story characters.
+		 * @param characterName Name of the character.
+		 * @param metaExpressions An unordered map between expression codes and image paths.
+		 * @param id A string uniquely identifying this (Meta)Character. Is used to link to (Meta)Frames.
+		 */
 		MetaCharacter(std::string characterName, const std::unordered_map<std::string, std::string>& metaExpressions, std::string id ) 
 		: id(id), name{characterName}, metaExpressions{metaExpressions} {};
 
@@ -227,17 +246,23 @@ struct MetaCharacter {
 
 };
 
+
+/**
+ * @brief Main story character class
+ * Contains everything needed to display a character.
+ * NOTE: Requires a meta-character template to construct
+ */
 struct Character {
 	public:
 		std::string name;
 		std::unordered_map<std::string, Image> expressions;
 	public:
+	/**
+	 * @brief Construct a new Character.
+	 * 
+	 * @param metaCharacter The MetaCharacter template from which the name and expressions will be drawn
+	 */
 		Character(const MetaCharacter& metaCharacter) : name(metaCharacter.name) {
-			for (auto& metaExpression : metaCharacter.metaExpressions) {
-				expressions.insert({metaExpression.first,{metaExpression.second}});
-			}
-		};
-		Character(MetaCharacter&& metaCharacter) : name(metaCharacter.name) {
 			for (auto& metaExpression : metaCharacter.metaExpressions) {
 				expressions.insert({metaExpression.first,{metaExpression.second}});
 			}
@@ -246,7 +271,10 @@ struct Character {
 		Character() = delete;
 };
 
-
+/**
+ * @brief Template for creating Frames
+ *  NOTE: Requires a meta-character template to construct
+ */
 struct MetaFrame {
 	public:
 		std::string textDialogue;
@@ -254,13 +282,24 @@ struct MetaFrame {
 		std::string expression;
 		std::string bg;
 	public:
+		/**
+		 * @brief Construct a new MetaFrame object
+		 * 
+		 * @param dialogue Textual dialogue the character will be speaking in this story frame.
+		 * @param character MetaCharacter whose ID this MetaFrame will bind to.
+		 * @param exp String uniquely identifying expression the story character will have.
+		 * @param imgURL Path to background image.
+		 */
 		MetaFrame(std::string dialogue, MetaCharacter& character, std::string exp, std::string imgURL) 
 		: textDialogue{dialogue}, characterID{character.id}, expression{exp}, bg(imgURL) {
 		}
 
 		MetaFrame() = delete;
 };
-
+/**
+ * @brief A representation of an instant or moment in the story.
+ * NOTE: Requires a meta-frame to construct.
+ */
 struct Frame {
 	public:
 		std::string textDialogue;
@@ -268,13 +307,21 @@ struct Frame {
 		std::string expression;
 		Image bg;
 	public:
+	/**
+	 * @brief Construct a new Frame
+	 * 
+	 * @param metaFrame The template for the Frame.
+	 * @param character A reference to the current Character.
+	 * @param img The image to use as a background.
+	 */
 		Frame(const MetaFrame& metaFrame, Character& character, Image& img) 
 		: textDialogue(metaFrame.textDialogue), storyCharacter(character), expression(metaFrame.expression), bg{img} {};
 
 		Frame() = delete;
 };
 
-struct Chapter {
+// TODO: Write up a good summary of the Chapter organisatorial structure.
+class Chapter {
 	private:
 	static const std::vector<Character> demetaCharacterVec(const std::vector<MetaCharacter>& metaCharacters) {
 		std::vector<Character> createdCharacters;
