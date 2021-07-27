@@ -285,7 +285,6 @@ struct Character {
 				expressions.insert({metaExpression.first,{metaExpression.second}});
 			}
 		};
-
 		Character() = delete;
 };
 
