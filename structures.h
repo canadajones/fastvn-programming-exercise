@@ -19,13 +19,17 @@
 #ifndef STRUCTURES_HEADER 
 #define STRUCTURES_HEADER
 
+// Nullary function that's handy for use as a breakpoint hook. In the debugger, set a breakpoint on it and step until you've returned
+// If using gdb, typing 'break brkpoint()' will accomplish this
 // NOLINTNEXTLINE(misc-definitions-in-headers)
 void brkpoint() {
+	// Keeping a copy of this here in case I need some good ol' print-debugging on which execution path is taken
 	std::cout << __FILE__ << " " << __LINE__ << std::endl;
 	return;
 }
 
 namespace vnpge {
+
 
 // In the interest of documentation:
 // Declare things as struct if they could just as easily be constructed as a simple aggregate structure.
@@ -74,12 +78,7 @@ struct RelativeDimensions {
 struct PositionMapping {
 	public:
 	RelativePosition srcPos;
-	uint srcWidth;
-	uint srcHeight;
-
 	RelativePosition destPos;
-	uint destWidth;
-	uint destHeight;
 };
 
 class DialogueFont {
@@ -97,33 +96,56 @@ class DialogueFont {
 		}
 };
 
-
+using TextBoxCreator = std::function<SDL_Surface* (AbsoluteDimensions, RelativeDimensions)>;
 class TextBox {
 	private:
-	// Shouldn't really change, except for drastic changes in resolution (akin to changing devices)
-	// The widths and heights in this should be ignored, but attempts should be made to keep them up to date with the surface 
+	static uint getPtSize(AbsoluteDimensions boxDims) {
+		double boxHeight = static_cast<double>(boxDims.h) * 0.25;
+		uint ptSize;
+		uint numLines = 5;
 
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+		// TODO: Evaluate pixel values based on DPI
+
+		while (boxHeight > 40) {
+			ptSize = boxHeight/numLines;
+			if (ptSize > 60) {
+				numLines += 1;
+				continue;
+			}
+			if (ptSize < 15) {
+				numLines -= 1;
+				continue;
+			}
+
+			if (boxHeight/(numLines + 1) < 35) {
+				break;
+			}
+			else {
+				numLines += 1;
+			}
+		}
+		numLines += static_cast<uint>(boxDims.h / boxDims.w);
+		return static_cast<uint>(std::round(static_cast<double>(boxHeight)/static_cast<double>(numLines)));
+	}
+
+	// Shouldn't really change, except for drastic changes in resolution (akin to changing devices)
 	PositionMapping posMap = {
 		.srcPos = {0, 0},
 		.destPos = {0, 0.75}
 	};
-	#pragma GCC diagnostic pop 
-
+	
 	// Dimensions relative to "screen" dimensions (it's really the surface dimensions, but realistically it's going to be the screen surface)
-	RelativeDimensions relDimensions;
+	RelativeDimensions relDimensions = {.w = 1.0, .h = 0.25};
 
 	// Changes with resolution when resizing window
 	std::shared_ptr<SDL_Surface> box;
 	
 	// May change at an arbitrary time
 	DialogueFont font;
+	std::string fontName;
 	
 	// Regenerated every time the frame is changed
 	std::shared_ptr<SDL_Surface> textSurface;
-	
-	
 
 	public:
 	/**
@@ -133,18 +155,9 @@ class TextBox {
 	 * @param font The font to use, in form of a DialogueFont.
 	 * @param boxGenerator A function accepting the absolute dimensions of the destination surface, as well as the relative dimensions this box occupies thereon.
 	 */
-	TextBox(AbsoluteDimensions surfDimensions, std::string font, std::function<SDL_Surface* (AbsoluteDimensions, RelativeDimensions)> boxGenerator) :
-		relDimensions{.w = 1.0, .h = 0.25}, box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, font{font, 40}, textSurface{nullptr} {
-			#pragma GCC diagnostic push
-			#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-			posMap = {
-				.srcPos = posMap.srcPos,
-				.srcWidth = static_cast<uint>(box->w),
-				.srcHeight = static_cast<uint>(box->h),
-				.destPos = posMap.destPos
-			};
-			#pragma GCC diagnostic pop
-
+	TextBox(AbsoluteDimensions surfDimensions, std::string font, TextBoxCreator boxGenerator) :
+		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, font{font, getPtSize(surfDimensions)}, 
+		fontName{font}, textSurface{nullptr} {
 		};
 
 
@@ -161,11 +174,16 @@ class TextBox {
 
 	SDL_Surface* generateDisplayText(std::string text) {
 		SDL_Color color = {255, 255, 255, 255};
-		textSurface.reset(TTF_RenderUTF8_Blended(font.getFont(), text.c_str(), color), SDL_FreeSurface);
+		textSurface.reset(TTF_RenderUTF8_Blended_Wrapped(font.getFont(), text.c_str(), color, box->w - 48), SDL_FreeSurface);
 
 		return textSurface.get();
 	};
 
+	AbsoluteDimensions updateResolution(AbsoluteDimensions surfDimensions, TextBoxCreator boxGenerator) {
+		box.reset(boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface);
+		font = {fontName, getPtSize(surfDimensions)};
+		return {static_cast<uint>(box->w), static_cast<uint>(box->h)};
+	};
 };
 
 /**
@@ -173,11 +191,12 @@ class TextBox {
  * Note: this is a "smart" class, so you should only rely on the getters being part of the API, unless otherwise stated.
  */
 class Image {
-	public:
+	private:
 		std::string url;
 		
 		std::shared_ptr<SDL_Surface> imageSurface;
-		 
+	
+	public:
 		/**
 		 * @brief Construct a new Image object from scratch.
 		 * Normal constructor to make a new Image. This will load the image pointed to by location, and will assign it to an SDL_Surface
@@ -185,8 +204,7 @@ class Image {
 		 */
 		Image(std::string location) : url(location), imageSurface{IMG_Load(url.c_str()), SDL_FreeSurface} {
 			if (imageSurface == nullptr) {
-				//throw std::runtime_error("\033[1m\033[31mFatal error: Image '" + url + "' could not be loaded.\033[37m");
-				std::cout << "\033[1m\033[31mFatal error: Image '" + url + "' could not be loaded.\033[37m" << std::endl;
+				throw std::runtime_error("\u001b[31mFatal error: Image '" + url + "' could not be loaded.\u001b[0m");
 			}
 		};
 
@@ -272,7 +290,7 @@ struct Character {
 };
 
 /**
- * @brief Template for creating Frames
+ * @brief Template for creating Frames.
  *  NOTE: Requires a meta-character template to construct
  */
 struct MetaFrame {
@@ -280,7 +298,9 @@ struct MetaFrame {
 		std::string textDialogue;
 		std::string characterID;
 		std::string expression;
+		PositionMapping position;
 		std::string bg;
+		
 	public:
 		/**
 		 * @brief Construct a new MetaFrame object
@@ -290,8 +310,8 @@ struct MetaFrame {
 		 * @param exp String uniquely identifying expression the story character will have.
 		 * @param imgURL Path to background image.
 		 */
-		MetaFrame(std::string dialogue, MetaCharacter& character, std::string exp, std::string imgURL) 
-		: textDialogue{dialogue}, characterID{character.id}, expression{exp}, bg(imgURL) {
+		MetaFrame(std::string dialogue, MetaCharacter& character, std::string exp, const PositionMapping& posMap, std::string imgURL) 
+		: textDialogue{dialogue}, characterID{character.id}, expression{exp}, position(posMap), bg(imgURL) {
 		}
 
 		MetaFrame() = delete;
@@ -305,6 +325,8 @@ struct Frame {
 		std::string textDialogue;
 		Character& storyCharacter;
 		std::string expression;
+		PositionMapping position;
+
 		Image bg;
 	public:
 	/**
@@ -315,7 +337,7 @@ struct Frame {
 	 * @param img The image to use as a background.
 	 */
 		Frame(const MetaFrame& metaFrame, Character& character, Image& img) 
-		: textDialogue(metaFrame.textDialogue), storyCharacter(character), expression(metaFrame.expression), bg{img} {};
+		: textDialogue(metaFrame.textDialogue), storyCharacter(character), expression(metaFrame.expression), position(metaFrame.position), bg{img} {};
 
 		Frame() = delete;
 };
@@ -337,6 +359,7 @@ class Chapter {
 		std::string chapterName;
 		std::vector<Character> storyCharacters;
 		std::vector<Frame> storyFrames;
+		std::vector<Image> backgrounds;
 
 		TextBox textBox;
 		std::vector<Frame>::iterator curFrame;
@@ -346,22 +369,23 @@ class Chapter {
 			storyFrames.reserve(metaFrames.size());
 			
 			std::unordered_map<std::string, Character&> charIDToRefMap;
-			std::unordered_map<std::string, Image> bgPathtoImageMap;
+			std::unordered_map<std::string, Image&> bgPathtoImageMap;
 			
 			{
 				std::vector<Character>::iterator it1 = storyCharacters.begin();
 				for (auto& metaChar : metaCharacters) {
 					charIDToRefMap.insert({metaChar.id, *it1.base()});
-					std::next(it1);
+					it1 = std::next(it1);
 					
 				}
 			}
+			brkpoint();
 			
 			for (auto& metaFrame : metaFrames) {
 				if (charIDToRefMap.count(metaFrame.characterID)) {
 					
 					if (!bgPathtoImageMap.count(metaFrame.bg)) {
-						bgPathtoImageMap.insert({metaFrame.bg, {metaFrame.bg}});
+						bgPathtoImageMap.insert({metaFrame.bg, backgrounds.emplace_back(metaFrame.bg)});
 					}
 					
 					storyFrames.emplace_back(metaFrame, charIDToRefMap.at(metaFrame.characterID), bgPathtoImageMap.at(metaFrame.bg));
@@ -375,7 +399,6 @@ class Chapter {
 			curFrame = storyFrames.begin();
 			
 			textBox.generateDisplayText(curFrame->textDialogue);	
-			
 		};
 
 	
@@ -398,6 +421,11 @@ class Chapter {
 		}
 		return curFrame;
 	}
+	AbsoluteDimensions updateResolution(AbsoluteDimensions surfDimensions, TextBoxCreator boxGenerator) {
+		AbsoluteDimensions newDims = textBox.updateResolution(surfDimensions, boxGenerator);
+		textBox.generateDisplayText(curFrame->textDialogue);
+		return newDims;
+	};
 };
 };
 #endif

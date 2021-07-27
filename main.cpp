@@ -67,15 +67,14 @@ class SDLManager {
 
 
 		//Create window
-		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
+
+		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 400, SDL_WINDOW_RESIZABLE);
 
 		if (window == nullptr) {
 			std::string err = "Window could not be created! SDL_Error: "; 
 			throw std::runtime_error(err.append(SDL_GetError()));
 		}
-		
-		//Get window surface
-		screenSurface = SDL_GetWindowSurface(window);
 
 
 		screen = Image(screenSurface, true);
@@ -101,21 +100,21 @@ class SDLManager {
 
 
 	SDL_Surface* getScreenSurface() {
-		return screenSurface;
+		return SDL_GetWindowSurface(window);
 	}
 	SDL_Window* getWindow() {
 		return window;
 	}
 
-	Image& getScreenImage() {
-		return screen;
+	Image getScreenImage() {
+		return Image(SDL_GetWindowSurface(window), true);
 	}
 };
 
 
 
 
-AbsolutePosition getPixelPosfromPosition(PositionMapping& posMap) {
+AbsolutePosition getPixelPosfromPosition(AbsoluteDimensions& srcDim, AbsoluteDimensions& destDim, PositionMapping& posMap) {
 
 	// It contains a pair of points, plus the widths and heights of the two surfaces
 	// The points are in the form of normalised doubles, where 0,0 is the top left corner,
@@ -125,13 +124,13 @@ AbsolutePosition getPixelPosfromPosition(PositionMapping& posMap) {
 	// Simply using the doubles would give an incorrect result, as it would be equivalent to dest_x/dest/width - src_x/src_width,
 	// which I hope is obvious wouldn't work. You can't just add and subtract percentages!
 
-	int srcLocalPixPosX = posMap.srcWidth * posMap.srcPos.x;
+	int srcLocalPixPosX = srcDim.w * posMap.srcPos.x;
 
-	int srcLocalPixPosY = posMap.srcHeight * posMap.srcPos.y;
+	int srcLocalPixPosY = srcDim.h * posMap.srcPos.y;
 
-	int destLocalPixPosX = posMap.destWidth * posMap.destPos.x;
+	int destLocalPixPosX = destDim.w * posMap.destPos.x;
 
-	int destLocalPixPosY = posMap.destHeight * posMap.destPos.y;
+	int destLocalPixPosY = destDim.h * posMap.destPos.y;
 
 	// Now that we have the variables unpacked, use them
 	// Technically, the src coordinates here are being used for their distance from the origin
@@ -193,20 +192,18 @@ int blitImageConstAspectRatio(Image& src, Image& dest, PositionMapping posMap, u
 		pos.w = static_cast<uint>(std::round(scale * dest.getSurface()->w));
 	}
 
-	// Filling in widths and heights
-	posMap = {
-		.srcPos = posMap.srcPos,
-		.srcWidth = static_cast<uint>(pos.w),
-		.srcHeight = static_cast<uint>(pos.h),
 
-		.destPos = posMap.destPos,
-		.destWidth = static_cast<uint>(dest.getSurface()->w),
-		.destHeight = static_cast<uint>(dest.getSurface()->h)
+	AbsoluteDimensions srcDim = {
+		.w = static_cast<uint>(pos.w),
+		.h = static_cast<uint>(pos.h)
+	};
+
+	AbsoluteDimensions destDim = {
+		.w = static_cast<uint>(dest.getSurface()->w),
+		.h = static_cast<uint>(dest.getSurface()->h)
 	};
 	// Get x and y coordinates of the screen to be blitted
-	AbsolutePosition xy = getPixelPosfromPosition(posMap);
-
-	
+	AbsolutePosition xy = getPixelPosfromPosition(srcDim, destDim, posMap);
 
 	pos.x = xy.x;
 	pos.y = xy.y;
@@ -223,15 +220,19 @@ void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) 
 	PositionMapping posMap = textBox.getPosMap();
 	posMap = {
 		.srcPos = posMap.srcPos,
-		.srcWidth = static_cast<uint>(textBox.getBox()->w),
-		.srcHeight = static_cast<uint>(textBox.getBox()->h),
-
-		.destPos = posMap.destPos,
-		.destWidth = static_cast<uint>(screenSurface->w),
-		.destHeight = static_cast<uint>(screenSurface->h)
+		.destPos = posMap.destPos
 	};
 
-	AbsolutePosition xy = getPixelPosfromPosition(posMap);
+	AbsoluteDimensions srcDim = {
+		.w = static_cast<uint>(textBox.getBox()->w),
+		.h = static_cast<uint>(textBox.getBox()->h),
+	};
+
+	AbsoluteDimensions destDim = {
+		.w = static_cast<uint>(screenSurface->w),
+		.h = static_cast<uint>(screenSurface->h)
+	};
+	AbsolutePosition xy = getPixelPosfromPosition(srcDim, destDim, posMap);
 
 	SDL_Rect pos = {
 		.x = xy.x,
@@ -243,8 +244,8 @@ void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) 
 	SDL_BlitSurface(textBox.getBox(), nullptr, screenSurface, &pos);
 
 	// TODO: make this relative to the screen
-	pos.x += 30;
-	pos.y += 30;
+	pos.x += 20;
+	pos.y += 20;
 
 	SDL_BlitSurface(textBox.getText(), nullptr, screenSurface, &pos);
 };
@@ -253,12 +254,16 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 	/* Render loop:
 	   	
 		Background - x
+			|- Transforms
+			|- Transitions
 		Characters
-			|- Position
+			|- Position - x
 			|- Multiple in a frame
-			|- Expressions -x
+			|- Expressions - x
 			|		|- Expression builder?
 			|- Animations?
+			|- Transforms
+			|- Transitions
 		Dialogue
 			|- Text box - x
 			|- Text - x
@@ -269,19 +274,24 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 			|- Mouse clickies
 			|- Menu
 	*/
+	/*
+		Things to make resolution-independent:
+		Text and word wrap (!!!!)
+		Text boxes
+		
+	*/
 
 	// Initial setup
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
 	SDL_Window* window = SDLInfo.getWindow();
-	Image& screen = SDLInfo.getScreenImage();
+	Image screen = SDLInfo.getScreenImage();
 
 	
 
 	// Background
 
 	SDL_FillRect(screenSurface, nullptr, SDL_MapRGB(screenSurface->format, 0x00, 0x00, 0x00));
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+	
 	// Dimensions in posMaps are ignored in blitImageConstAspectRatio
 	PositionMapping posMap = {
 		.srcPos = {0.5, 0.5},
@@ -292,12 +302,8 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 
 	// Characters
 	
-	posMap = {
-		.srcPos = {0.5, 1},
-		.destPos = {0.5, 1},
-	};
-	#pragma GCC diagnostic pop
-	blitImageConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, posMap, 80);
+	
+	blitImageConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, curFrame.position, 80);
 
 	// Text
 	renderText(screen.getSurface(), textBox, curFrame.textDialogue);
@@ -321,6 +327,7 @@ int handleEvents(Chapter& chapter) {
 					case SDLK_SPACE: {
 						if (!event.key.repeat) {
 							chapter.nextFrame();
+							return 1;
 						}
 					}
 					break;
@@ -328,7 +335,19 @@ int handleEvents(Chapter& chapter) {
 					case SDLK_z: {
 						if (!event.key.repeat) {
 							chapter.prevFrame();
+							return 1;
 						}
+					}
+					break;
+				}
+			}
+			break;
+			case SDL_WINDOWEVENT: {
+				switch(event.window.event) {
+					case SDL_WINDOWEVENT_RESIZED: {
+						// This may look complicated, but all it does is create a AbsoluteDimensions object containing the new resolution
+						chapter.updateResolution({static_cast<uint>(event.window.data1), static_cast<uint>(event.window.data2)}, makeTextBox);
+						return 1;
 					}
 					break;
 				}
@@ -339,26 +358,33 @@ int handleEvents(Chapter& chapter) {
 	return 0;
 }
 
+
 int main() {
-	
 	SDLManager SDLInfo;
 	
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
 
 	Chapter test = initTest(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
 
-	auto& it = test.curFrame;
-
+	auto& curFrame = test.curFrame;
+	renderFrame(SDLInfo, *curFrame.base(), test.textBox);
+	
 	while (true) { 
-		if (handleEvents(test) == 137) {
+		switch (handleEvents(test)) {
+			case 137: {
+				return 0;
+			}
+			break;
+			case 1: {
+				renderFrame(SDLInfo, *curFrame.base(), test.textBox);
+			}
+		}
+
+		if (curFrame == test.storyFrames.end()) {
 			return 0;
 		}
 
-		if (it == test.storyFrames.end()) {
-			return 0;
-		}
-		assert(it.base() != nullptr);
-		renderFrame(SDLInfo, *it.base(), test.textBox);
+		
 
 		SDL_Delay(10);
 	}
