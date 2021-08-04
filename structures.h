@@ -1,3 +1,4 @@
+#include <SDL2/SDL_pixels.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -42,13 +43,14 @@ namespace vnpge {
 // This doesn't actually matter in any way, since all access specifiers must be explicit.
 // But it allows for ascertaining whether a class is "simple" at a glance.
 
-enum position : uint {
+enum struct position : uint {
 	left,
 	right,
 	middle_bottom,
 	top,
 	bottom
 };
+ 
 
 struct AbsolutePosition {
 	public:
@@ -80,6 +82,15 @@ struct PositionMapping {
 	RelativePosition srcPos;
 	RelativePosition destPos;
 };
+
+SDL_Surface* makeNewSurface(uint w, uint h) {
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	return SDL_CreateRGBSurface(0, w, h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	#else
+	return SDL_CreateRGBSurface(0, w, h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	#endif
+};
+
 
 class DialogueFont {
 	private:
@@ -139,6 +150,7 @@ class TextBox {
 
 	// Changes with resolution when resizing window
 	std::shared_ptr<SDL_Surface> box;
+	std::shared_ptr<SDL_Surface> displayBox;
 	
 	// May change at an arbitrary time
 	DialogueFont font;
@@ -147,6 +159,7 @@ class TextBox {
 	// Regenerated every time the frame is changed
 	std::shared_ptr<SDL_Surface> textSurface;
 
+	int lines;
 	public:
 	/**
 	 * @brief Construct a new TextBox.
@@ -156,8 +169,8 @@ class TextBox {
 	 * @param boxGenerator A function accepting the absolute dimensions of the destination surface, as well as the relative dimensions this box occupies thereon.
 	 */
 	TextBox(AbsoluteDimensions surfDimensions, std::string font, TextBoxCreator boxGenerator) :
-		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, font{font, getPtSize(surfDimensions)}, 
-		fontName{font}, textSurface{nullptr} {
+		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, displayBox{makeNewSurface(box->w - 48, box->h - 48)},
+		font{font, getPtSize(surfDimensions)}, fontName{font}, textSurface{nullptr}, lines{0} {
 		};
 
 
@@ -175,15 +188,36 @@ class TextBox {
 	SDL_Surface* generateDisplayText(std::string text) {
 		SDL_Color color = {255, 255, 255, 255};
 		textSurface.reset(TTF_RenderUTF8_Blended_Wrapped(font.getFont(), text.c_str(), color, box->w - 48), SDL_FreeSurface);
-
+		SDL_FillRect(displayBox.get(), nullptr, SDL_MapRGBA(displayBox->format, 0, 0, 0, 0));
+		SDL_BlitSurface(textSurface.get(), nullptr, displayBox.get(), nullptr);
 		return textSurface.get();
 	};
 
 	AbsoluteDimensions updateResolution(AbsoluteDimensions surfDimensions, TextBoxCreator boxGenerator) {
 		box.reset(boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface);
+		displayBox.reset(makeNewSurface(surfDimensions.w - 48 , surfDimensions.h - 48 ));
 		font = {fontName, getPtSize(surfDimensions)};
 		return {static_cast<uint>(box->w), static_cast<uint>(box->h)};
 	};
+
+	void updateTextPosition() {
+		int ptSize = getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
+		SDL_Rect rect {
+			.x = 0,
+			.y = lines * 2 * ptSize,
+			.w = 0,
+			.h = 0
+		};
+		SDL_FillRect(displayBox.get(), nullptr, SDL_MapRGBA(displayBox->format, 0, 0, 0, 0));
+		SDL_BlitSurface(textSurface.get(), nullptr, displayBox.get(), &rect);
+	};
+
+	void incLines() {
+		lines++;
+	}
+	void decLines() {
+		lines--;
+	}
 };
 
 /**
@@ -378,7 +412,6 @@ class Chapter {
 					
 				}
 			}
-			brkpoint();
 			
 			for (auto& metaFrame : metaFrames) {
 				if (charIDToRefMap.count(metaFrame.characterID)) {

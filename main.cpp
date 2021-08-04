@@ -67,9 +67,9 @@ class SDLManager {
 
 
 		//Create window
-		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
-		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 400, SDL_WINDOW_RESIZABLE);
+		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 400, SDL_WINDOW_RESIZABLE);
 
 		if (window == nullptr) {
 			std::string err = "Window could not be created! SDL_Error: "; 
@@ -267,12 +267,13 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 		Dialogue
 			|- Text box - x
 			|- Text - x
-			|- Autofitting
+			|- Autofitting - x?
 			|- Custom design?
 		Graphical interface
 			|- Keymaps - x?
-			|- Mouse clickies
 			|- Menu
+			|- Mouse clickies
+			
 	*/
 	/*
 		Things to make resolution-independent:
@@ -369,31 +370,27 @@ int main() {
 	auto& curFrame = test.curFrame;
 	renderFrame(SDLInfo, *curFrame.base(), test.textBox);
 	
-	while (true) { 
+	while (true) {
 		switch (handleEvents(test)) {
 			case 137: {
 				return 0;
 			}
 			break;
 			case 1: {
+				if (curFrame == test.storyFrames.end()) {
+					return 0;
+				}
 				renderFrame(SDLInfo, *curFrame.base(), test.textBox);
 			}
 		}
-
-		if (curFrame == test.storyFrames.end()) {
-			return 0;
-		}
-
 		
-
 		SDL_Delay(10);
 	}
 
 	// TODO:
 	// Make a loader at some point, though after the main displayer works
-
-
-
+	// Modularise the code 
+	// Add "dynamic" loading of code (adding new modules may require a recompile, but simply including it should be enough to load it)
 
 	return 0;
 }
