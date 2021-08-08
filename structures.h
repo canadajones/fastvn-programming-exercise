@@ -1,3 +1,4 @@
+#include <SDL2/SDL_blendmode.h>
 #include <SDL2/SDL_pixels.h>
 #include <stdexcept>
 #include <string>
@@ -169,8 +170,9 @@ class TextBox {
 	 * @param boxGenerator A function accepting the absolute dimensions of the destination surface, as well as the relative dimensions this box occupies thereon.
 	 */
 	TextBox(AbsoluteDimensions surfDimensions, std::string font, TextBoxCreator boxGenerator) :
-		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, displayBox{makeNewSurface(box->w - 48, box->h - 48)},
+		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, displayBox{makeNewSurface(box->w - 48, box->h - 48), SDL_FreeSurface},
 		font{font, getPtSize(surfDimensions)}, fontName{font}, textSurface{nullptr}, lines{0} {
+			SDL_SetSurfaceBlendMode(displayBox.get(), SDL_BLENDMODE_ADD);
 		};
 
 
@@ -182,20 +184,28 @@ class TextBox {
 	};
 	
 	SDL_Surface* getText() const {
-		return textSurface.get();
+		return displayBox.get();
 	}
 
 	SDL_Surface* generateDisplayText(std::string text) {
+
+		// TODO: make per-character text colouring a thing
 		SDL_Color color = {255, 255, 255, 255};
 		textSurface.reset(TTF_RenderUTF8_Blended_Wrapped(font.getFont(), text.c_str(), color, box->w - 48), SDL_FreeSurface);
-		SDL_FillRect(displayBox.get(), nullptr, SDL_MapRGBA(displayBox->format, 0, 0, 0, 0));
-		SDL_BlitSurface(textSurface.get(), nullptr, displayBox.get(), nullptr);
+		SDL_SetSurfaceBlendMode(textSurface.get(), SDL_BLENDMODE_NONE);
+		
+		// Reset text position upon text change
+		lines = 0;
+		updateTextPosition();
+
 		return textSurface.get();
 	};
 
 	AbsoluteDimensions updateResolution(AbsoluteDimensions surfDimensions, TextBoxCreator boxGenerator) {
 		box.reset(boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface);
-		displayBox.reset(makeNewSurface(surfDimensions.w - 48 , surfDimensions.h - 48 ));
+
+		displayBox.reset(makeNewSurface(surfDimensions.w - 48 , surfDimensions.h - 48 ), SDL_FreeSurface);
+		
 		font = {fontName, getPtSize(surfDimensions)};
 		return {static_cast<uint>(box->w), static_cast<uint>(box->h)};
 	};
@@ -213,10 +223,21 @@ class TextBox {
 	};
 
 	void incLines() {
-		lines++;
+		// This only fires if lines has been decremented already
+		// It is thus redundant to check if scrollability is of concern.
+		if (lines < 0) {
+			lines++;
+			updateTextPosition();
+		}
 	}
 	void decLines() {
-		lines--;
+		// Only allow scrolling if the current text does not fit on screen
+		//int pixelsMoved = lines * 2 * getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
+		// textSurface->h + pixelsMoved > displayBox->h
+		if (textSurface->h > displayBox->h) {
+			lines--;
+			updateTextPosition();
+		}
 	}
 };
 

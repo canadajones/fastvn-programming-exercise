@@ -67,9 +67,9 @@ class SDLManager {
 
 
 		//Create window
-		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
-		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 400, SDL_WINDOW_RESIZABLE);
+		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
 
 		if (window == nullptr) {
 			std::string err = "Window could not be created! SDL_Error: "; 
@@ -340,6 +340,22 @@ int handleEvents(Chapter& chapter) {
 						}
 					}
 					break;
+
+					case SDLK_UP:{
+						if (!event.key.repeat) {
+							chapter.textBox.decLines();
+							return 1;
+						}
+						
+					}
+					break;
+					case SDLK_DOWN:{
+						if (!event.key.repeat) {
+							chapter.textBox.incLines();
+							return 1;
+						}
+					}
+					break;
 				}
 			}
 			break;
@@ -390,6 +406,7 @@ int main() {
 	// TODO:
 	// Make a loader at some point, though after the main displayer works
 	// Modularise the code 
+	// "System" queues, to enable more flexibility in terms of input and effects and such
 	// Add "dynamic" loading of code (adding new modules may require a recompile, but simply including it should be enough to load it)
 
 	return 0;
