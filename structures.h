@@ -204,7 +204,7 @@ class TextBox {
 	AbsoluteDimensions updateResolution(AbsoluteDimensions surfDimensions, TextBoxCreator boxGenerator) {
 		box.reset(boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface);
 
-		displayBox.reset(makeNewSurface(surfDimensions.w - 48 , surfDimensions.h - 48 ), SDL_FreeSurface);
+		displayBox.reset(makeNewSurface(box->w - 48 , box->h - 48 ), SDL_FreeSurface);
 		
 		font = {fontName, getPtSize(surfDimensions)};
 		return {static_cast<uint>(box->w), static_cast<uint>(box->h)};
@@ -232,9 +232,11 @@ class TextBox {
 	}
 	void decLines() {
 		// Only allow scrolling if the current text does not fit on screen
-		//int pixelsMoved = lines * 2 * getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
-		// textSurface->h + pixelsMoved > displayBox->h
-		if (textSurface->h > displayBox->h) {
+		// Also disallow further scrolling if the bottom of the text has been reached.
+		// We check for this by seeing if the remainder of the text surface height post-scrolling is lesser than the display box height
+		int pixelsMoved = lines * 2 * getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
+		
+		if (textSurface->h > displayBox->h && textSurface->h + pixelsMoved > displayBox->h) {
 			lines--;
 			updateTextPosition();
 		}

@@ -54,7 +54,7 @@ Chapter initTest(uint w, uint h) {
 											"Text in this portion will be excessively verbose such that it can properly " //NOLINT(bugprone-suspicious-missing-comma
 											"test the capabilities of the text splitter and reassembler.",
 											"Hmm. what if I threw in a \\n? That ought\nto cause some havoc. It'll "
-											"at least tell us if line feeds  require special treatment. I wonder if "
+											"at least tell us if line feeds require special treatment. I wonder if "
 											"they would make for a good way to break the text on the screen, as opposed "
 											"to manually cutting things.",
 											"Are things working? I hope so; it would be a shame if it didn't.",

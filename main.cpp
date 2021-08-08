@@ -56,7 +56,8 @@ class SDLManager {
 		// Load support for the JPG and PNG image formats
 		int flags = IMG_INIT_JPG | IMG_INIT_PNG;
 		if (IMG_Init(flags) ^ flags) {
-			
+			std::string err = "SDL_Image could not initialize! IMG_Error: ";
+			throw std::runtime_error(err.append(IMG_GetError()));
 		}
 
 		// Grab font rendering library
@@ -302,7 +303,6 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 	blitImageConstAspectRatio(curFrame.bg, screen, posMap, 100);
 
 	// Characters
-	
 	
 	blitImageConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, curFrame.position, 80);
 
