@@ -2,8 +2,12 @@
 #include <string>
 #include <iostream>
 
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_rect.h>
 
 #include "structures.h"
+#include "chapter.h"
 
 #ifndef DATALOAD_HEADER
 #define DATALOAD_HEADER
