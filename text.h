@@ -5,6 +5,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_blendmode.h>
+#include <SDL2/SDL_pixels.h>
 
 #include <SDL2/SDL_image.h>
 
@@ -146,7 +148,7 @@ class TextBox {
 		SDL_BlitSurface(textSurface.get(), nullptr, displayBox.get(), &rect);
 	};
 
-	void incLines() {
+	void scrollDown() {
 		// This only fires if lines has been decremented already
 		// It is thus redundant to check if scrollability is of concern.
 		if (lines < 0) {
@@ -154,7 +156,7 @@ class TextBox {
 			updateTextPosition();
 		}
 	}
-	void decLines() {
+	void scrollUp() {
 		// Only allow scrolling if the current text does not fit on screen
 		// Also disallow further scrolling if the bottom of the text has been reached.
 		// We check for this by seeing if the remainder of the text surface height post-scrolling is lesser than the display box height

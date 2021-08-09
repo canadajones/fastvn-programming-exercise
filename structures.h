@@ -1,21 +1,11 @@
 
 #include <stdexcept>
 #include <string>
-#include <vector>
-#include <memory>
+
+
 #include <iostream>
-#include <functional>
-#include <unordered_map>
-
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_surface.h>
-#include <SDL2/SDL_rect.h>
-#include <SDL2/SDL_ttf.h>
 
 
-#include <SDL2/SDL_blendmode.h>
-#include <SDL2/SDL_pixels.h>
-#include <SDL2/SDL_image.h>
 
 #ifndef STRUCTURES_HEADER 
 #define STRUCTURES_HEADER

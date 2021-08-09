@@ -27,6 +27,7 @@
 #include "chapter.h"
 #include "image.h"
 #include "text.h"
+#include "schedule.h"
 
 #include "data.h"
 
@@ -284,47 +285,45 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 	SDL_UpdateWindowSurface(window);
 
 }
+Schedule<Event> handleEvents() {
+	
+	std::vector<Event> events;
 
-int handleEvents(Chapter& chapter) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 			case SDL_KEYDOWN: {
 				switch(event.key.keysym.sym) {
 					case SDLK_ESCAPE: {
-						return 137;
+						// 137; magic number for program exit
+						events.emplace_back(Action::clean_exit);
 					}
 					break;
 					case SDLK_RIGHT:
 					case SDLK_c:
 					case SDLK_SPACE: {
 						if (!event.key.repeat) {
-							chapter.nextFrame();
-							return 1;
+							events.emplace_back(Action::next_page);
 						}
 					}
 					break;
 					case SDLK_LEFT:
 					case SDLK_z: {
 						if (!event.key.repeat) {
-							chapter.prevFrame();
-							return 1;
+							events.emplace_back(Action::prev_page);
 						}
 					}
 					break;
 
 					case SDLK_UP:{
 						if (!event.key.repeat) {
-							chapter.textBox.decLines();
-							return 1;
+							events.emplace_back(Action::scroll_up);
 						}
-						
 					}
 					break;
 					case SDLK_DOWN:{
 						if (!event.key.repeat) {
-							chapter.textBox.incLines();
-							return 1;
+							events.emplace_back(Action::scroll_down);
 						}
 					}
 					break;
@@ -334,9 +333,7 @@ int handleEvents(Chapter& chapter) {
 			case SDL_WINDOWEVENT: {
 				switch(event.window.event) {
 					case SDL_WINDOWEVENT_RESIZED: {
-						// This may look complicated, but all it does is create a AbsoluteDimensions object containing the new resolution
-						chapter.updateResolution({static_cast<uint>(event.window.data1), static_cast<uint>(event.window.data2)}, makeTextBox);
-						return 1;
+						events.emplace_back(Action::window_resized, event.window.data1, event.window.data2);
 					}
 					break;
 				}
@@ -344,7 +341,7 @@ int handleEvents(Chapter& chapter) {
 			break;
 		}
 	}
-	return 0;
+	return {events};
 }
 
 
@@ -359,17 +356,53 @@ int main() {
 	renderFrame(SDLInfo, *curFrame.base(), test.textBox);
 	
 	while (true) {
-		switch (handleEvents(test)) {
-			case 137: {
-				return 0;
-			}
-			break;
-			case 1: {
-				if (curFrame == test.storyFrames.end()) {
+		Schedule<Event> events = handleEvents();
+		while (events.next()) {
+			brkpoint();
+			std::cout << events.length() << endl;
+			auto ev = events.get();
+			switch (ev.getAction()) {
+
+				case Action::clean_exit: {
 					return 0;
 				}
-				renderFrame(SDLInfo, *curFrame.base(), test.textBox);
+				break;
+
+				case Action::next_page: {
+					test.nextFrame();
+				}
+				break;
+
+				case Action::prev_page: {
+					test.prevFrame();
+				}
+				break;
+
+				case Action::scroll_up: {
+					test.textBox.scrollUp();
+				}
+				break;
+
+				case Action::scroll_down: {
+					test.textBox.scrollDown();
+				}
+				break;
+
+				case Action::window_resized: {
+					// This may look complicated, but all it does is create a AbsoluteDimensions object containing the new resolution
+					test.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
+				}
+				break;
 			}
+			
+			// If any of the previous caused us to get to the end of the chapter, exit cleanly before we encounter an error.
+			// The error in question would be invalid dereferencing of the end iterator.
+			if (curFrame == test.storyFrames.end()) {
+				return 0;
+			}
+
+			// Only render the frame if there is anything to do		
+			renderFrame(SDLInfo, *curFrame.base(), test.textBox);
 		}
 		
 		SDL_Delay(10);
@@ -377,7 +410,7 @@ int main() {
 
 	// TODO:
 	// Make a loader at some point, though after the main displayer works
-	// Modularise the code 
+
 	// "System" queues, to enable more flexibility in terms of input and effects and such
 	// Add "dynamic" loading of code (adding new modules may require a recompile, but simply including it should be enough to load it)
 
