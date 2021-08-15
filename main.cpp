@@ -341,7 +341,8 @@ Schedule<Event> handleEvents() {
 			break;
 		}
 	}
-	return {events};
+	Schedule<Event> evSched = {events};
+	return evSched;
 }
 
 
@@ -356,9 +357,9 @@ int main() {
 	renderFrame(SDLInfo, *curFrame.base(), test.textBox);
 	
 	while (true) {
-		Schedule<Event> events = handleEvents();
-		while (events.next()) {
-			brkpoint();
+		
+		for (auto events = handleEvents(); events.isValid(); events.next()) {
+			
 			std::cout << events.length() << endl;
 			auto ev = events.get();
 			switch (ev.getAction()) {
@@ -393,16 +394,18 @@ int main() {
 					test.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
 				}
 				break;
+
 			}
 			
-			// If any of the previous caused us to get to the end of the chapter, exit cleanly before we encounter an error.
+			// If any of the previous events caused us to get to the end of the chapter, exit cleanly before we encounter an error.
 			// The error in question would be invalid dereferencing of the end iterator.
 			if (curFrame == test.storyFrames.end()) {
 				return 0;
 			}
 
-			// Only render the frame if there is anything to do		
-			renderFrame(SDLInfo, *curFrame.base(), test.textBox);
+			// Only render the frame if there is anything to do.
+			// All current events cause a screen change, so reaching this point means it has to be run.
+			renderFrame(SDLInfo, *curFrame, test.textBox);
 		}
 		
 		SDL_Delay(10);
