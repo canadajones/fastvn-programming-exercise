@@ -9,13 +9,14 @@
 #define SCHEDULER_HEADER
 
 enum struct Action : int {
-	clean_exit,
+	nothing,
 	next_page,
 	prev_page,
 	scroll_up,
 	scroll_down,
 
-	window_resized
+	window_resized,
+	clean_exit = 137
 };
 
 class Event {
@@ -41,9 +42,17 @@ bool isIterEqual(std::vector<Event>::iterator it1, std::vector<Event>::iterator 
 	return it1 == it2;
 };
 
-std::string iterPrint(std::vector<Event>::iterator it) {
+// This is very inflexible; I'd make it so if I intended to use it in the future
+// However, since I don't need it, I'll just comment it out
+// Comment back in if you need to debug event iterators (or template it I guess)
+/*std::string iterPrint(std::vector<Event>::iterator it) {
 	std::string eventName = "";
 	switch (it->getAction()) {
+		case Action::nothing: {
+			std::cout << "attention! an event was issued to do literally nothing. this is a bug, please report it." << std::endl;
+			eventName.append("Action::nothing");
+		}
+		break;
 		case Action::clean_exit: {
 			eventName.append("Action::clean_exit");
 		}
@@ -77,7 +86,7 @@ std::string iterPrint(std::vector<Event>::iterator it) {
 	std::string data2 = std::to_string(it->getData().second);
 	return "{ Action=" + eventName + ", data1=" + data1 + ", data2=" + data2 + " };";
 }
-
+*/
 template <typename T>
 class Schedule {
 	private:
@@ -95,7 +104,6 @@ class Schedule {
 	}
 
 	T get() {
-		std::cout << iterPrint(it) << std::endl;
 		return *it;
 	};
 

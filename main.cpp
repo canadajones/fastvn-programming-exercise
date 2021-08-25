@@ -42,6 +42,8 @@ using namespace vnpge;
 typedef unsigned int uint;
 
 
+bool activeTransform = false;
+
 class SDLManager {
 	private:
 	SDL_Window* window;
@@ -249,12 +251,6 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 			|- Mouse clickies
 			
 	*/
-	/*
-		Things to make resolution-independent:
-		Text and word wrap (!!!!)
-		Text boxes
-		
-	*/
 
 	// Initial setup
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
@@ -357,10 +353,7 @@ int main() {
 	renderFrame(SDLInfo, *curFrame.base(), test.textBox);
 	
 	while (true) {
-		
 		for (auto events = handleEvents(); events.isValid(); events.next()) {
-			
-			std::cout << events.length() << endl;
 			auto ev = events.get();
 			switch (ev.getAction()) {
 
@@ -394,7 +387,10 @@ int main() {
 					test.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
 				}
 				break;
-
+				case Action::nothing: {
+					cout << "attention! an event was issued to do literally nothing. this is a bug, please report it." << endl;
+				}
+				break;
 			}
 			
 			// If any of the previous events caused us to get to the end of the chapter, exit cleanly before we encounter an error.
@@ -416,6 +412,7 @@ int main() {
 
 	// "System" queues, to enable more flexibility in terms of input and effects and such
 	// Add "dynamic" loading of code (adding new modules may require a recompile, but simply including it should be enough to load it)
-
+	// Sound
+	
 	return 0;
 }
