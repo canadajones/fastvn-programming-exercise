@@ -13,4 +13,8 @@ class ChapterLoader {
 
 };
 
+class JSONLoader {
+
+};
+
 #endif
