@@ -73,6 +73,8 @@ struct PositionMapping {
 	RelativePosition destPos;
 };
 
+// TODO: move this function somewhere more appropriate
+
 // NOLINTNEXTLINE(misc-definitions-in-headers)
 AbsolutePosition getPixelPosfromPosition(AbsoluteDimensions& srcDim, AbsoluteDimensions& destDim, PositionMapping& posMap) {
 

@@ -1,0 +1,35 @@
+{
+	"chapterName": "Test",
+	"storyCharacters": [
+		{
+			"id": "eclaire-0",
+			"name": "Eclaire",
+			"expressions": {
+				"eclaire-happy" : "assets/characters/eclaire/eclaire-happy.png",
+				"eclaire-neutral": "assets/characters/eclaire/eclaire-neutral.png"
+			}
+		},
+		{
+			"id": "carl-0",
+			"name": "Carl",
+			"expressions": {
+				"carl-neutral": "assets/characters/carl/carl-neutral.png"
+			}
+		}
+	],
+	"backgrounds" : [
+		"assets/backgrounds/eclaire/lake.jpg",
+		"assets/backgrounds/eclaire/lake2.jpg",
+		"assets/backgrounds/carl/lab.jpg"
+	],
+	"storyFrames" : [
+		{
+			"textDialogue": "",
+			"characterID": "eclaire-0",
+			"expression" : "eclaire-neutral",
+			"position" : [],
+			"background": "lake.jpg"
+
+		}
+	]
+}
