@@ -14,7 +14,10 @@ class ChapterLoader {
 };
 
 class JSONLoader {
+	private:
+	std::vector<std::string> paths;
 
+	public:
 };
 
 #endif

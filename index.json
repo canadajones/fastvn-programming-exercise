@@ -1,5 +1,16 @@
-{
-	"index": [
-		"test-chapter0.json"
-	]
+{	
+	"system" : [
+		"unstable-dialogue-v.0.0",
+		"unstable-position-v.0.0",
+		"unstable-render-v.0.0"
+	],
+	"extensions": [
+		"vnpge-base",
+		"temp-objects-world"
+	],
+	"index": {
+		"json": [
+			"test-chapter0.json"
+		]
+	}
 }
