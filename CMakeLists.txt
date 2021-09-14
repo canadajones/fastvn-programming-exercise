@@ -1,5 +1,5 @@
 # Comment out if needed; since I am the primary user of this file, this makes 100% sure that I use the correct compiler
-set(CMAKE_CXX_COMPILER "g++")
+#set(CMAKE_CXX_COMPILER "g++")
 
 cmake_minimum_required(VERSION 3.0.0)
 project(test1-vn VERSION 0.1.0 LANGUAGES CXX)
@@ -7,7 +7,7 @@ project(test1-vn VERSION 0.1.0 LANGUAGES CXX)
 # This apparently may cause issues with non-makefile generators. Comment out if needed
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_VERBOSE_MAKEFILE TRUE)
+#set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
 add_executable(test1 main.cpp)
 

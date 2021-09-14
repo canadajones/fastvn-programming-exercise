@@ -5,6 +5,8 @@
 #define GENERIC_LOADER_HEADER
 
 
+
+
 class ChapterLoader {
 	private:
 	std::vector<std::string> paths;
@@ -18,6 +20,7 @@ class JSONLoader {
 	std::vector<std::string> paths;
 
 	public:
+
 };
 
 #endif
