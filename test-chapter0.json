@@ -27,70 +27,70 @@
 			"textDialogue": "Thank you for participating in this test.",
 			"characterID": "eclaire-0",
 			"expression" : "eclaire-neutral",
-			"position" : [[0.5, 1],[0.5, 1]],
+			"position" : [[0.5, 1.0],[0.5, 1.0]],
 			"background": "assets/backgrounds/eclaire/lake.jpg"
 		},
 		{
 			"textDialogue": "If you can read this, then it probably worked.",
 			"characterID": "eclaire-0",
 			"expression" : "eclaire-neutral",
-			"position" : [[0.5, 1],[0.5, 1]],
+			"position" : [[0.5, 1.0],[0.5, 1.0]],
 			"background": "assets/backgrounds/eclaire/lake.jpg"
 		},
 		{
 			"textDialogue": "Well, that's all for now.",
 			"characterID": "eclaire-0",
 			"expression" : "eclaire-happy",
-			"position" : [[0.25, 1],[0.25, 1]],
+			"position" : [[0.25, 1.0],[0.25, 1.0]],
 			"background": "assets/backgrounds/eclaire/lake2.jpg"
 		},
 		{
 			"textDialogue": "Love you!",
 			"characterID": "eclaire-0",
 			"expression" : "eclaire-happy",
-			"position" : [[0.25, 1],[0.25, 1]],
+			"position" : [[0.25, 1.0],[0.25, 1.0]],
 			"background": "assets/backgrounds/eclaire/lake2.jpg"
 		},
 		{
 			"textDialogue": "Goodbye!",
 			"characterID": "eclaire-0",
 			"expression" : "eclaire-happy",
-			"position" : [[0.25, 1],[0.25, 1]],
+			"position" : [[0.25, 1.0],[0.25, 1.0]],
 			"background": "assets/backgrounds/eclaire/lake2.jpg"
 		},
 		{
 			"textDialogue": "Welcome to the extended text portion of this test program.",
 			"characterID": "carl-0",
 			"expression" : "carl-neutral",
-			"position" : [[0.4, 1],[0.5, 1]],
+			"position" : [[0.4, 1.0],[0.5, 1.0]],
 			"background": "assets/backgrounds/carl/lab.jpg"
 		},
 		{
 			"textDialogue": "Text in this portion will be excessively verbose such that it can properly test the capabilities of the text splitter and reassembler.",
 			"characterID": "carl-0",
 			"expression" : "carl-neutral",
-			"position" : [[0.4, 1],[0.5, 1]],
+			"position" : [[0.4, 1.0],[0.5, 1.0]],
 			"background": "assets/backgrounds/carl/lab.jpg"
 		},
 		{
 			"textDialogue": "Hmm. what if I threw in a \\n? That ought\nto cause some havoc. It'll at least tell us if line feeds require special treatment. I wonder if they would make for a good way to break the text on the screen, as opposed to manually cutting things.",
 			"characterID": "carl-0",
 			"expression" : "carl-neutral",
-			"position" : [[0.4, 1],[0.5, 1]],
+			"position" : [[0.4, 1.0],[0.5, 1.0]],
 			"background": "assets/backgrounds/carl/lab.jpg"
 		},
 		{
 			"textDialogue": "Are things working? I hope so; it would be a shame if it didn't.",
 			"characterID": "carl-0",
 			"expression" : "carl-neutral",
-			"position" : [[0.4, 1],[0.5, 1]],
+			"position" : [[0.4, 1.0],[0.5, 1.0]],
 			"background": "assets/backgrounds/carl/lab.jpg"
 		},
 		{
 			"textDialogue": "Well, it'd be informative either way. That's how science works, if you didn't know. The point isn't to find that which will prove your hypothesis, but more so to learn what is actually true. If the truth means your hypothesis, no matter how exciting, is bust, then it's still a success.",
 			"characterID": "carl-0",
 			"expression" : "carl-neutral",
-			"position" : [[0.4, 1],[0.5, 1]],
+			"position" : [[0.4, 1.0],[0.5, 1.0]],
 			"background": "assets/backgrounds/carl/lab.jpg"
 		}
 	]

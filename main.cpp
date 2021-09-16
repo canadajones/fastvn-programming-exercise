@@ -344,18 +344,20 @@ Schedule<Event> handleEvents() {
 
 
 int main() {
-	std::vector<std::string> vec = {"test-chapter0.json"};
-	JSONLoader a = {vec};
+	
+	JSONLoader a = {"index.json"};
 
 
 	SDLManager SDLInfo;
 	
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
+	// DEPRECATED
+	// Chapter test = initTest(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
+	Chapter chapter = a.loadChapter(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
 
-	Chapter test = initTest(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
 
-	auto& curFrame = test.curFrame;
-	renderFrame(SDLInfo, *curFrame.base(), test.textBox);
+	auto& curFrame = chapter.curFrame;
+	renderFrame(SDLInfo, *curFrame.base(), chapter.textBox);
 	
 	while (true) {
 		for (auto events = handleEvents(); events.isValid(); events.next()) {
@@ -368,28 +370,28 @@ int main() {
 				break;
 
 				case Action::next_page: {
-					test.nextFrame();
+					chapter.nextFrame();
 				}
 				break;
 
 				case Action::prev_page: {
-					test.prevFrame();
+					chapter.prevFrame();
 				}
 				break;
 
 				case Action::scroll_up: {
-					test.textBox.scrollUp();
+					chapter.textBox.scrollUp();
 				}
 				break;
 
 				case Action::scroll_down: {
-					test.textBox.scrollDown();
+					chapter.textBox.scrollDown();
 				}
 				break;
 
 				case Action::window_resized: {
 					// This may look complicated, but all it does is create a AbsoluteDimensions object containing the new resolution
-					test.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
+					chapter.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
 				}
 				break;
 				case Action::nothing: {
@@ -400,13 +402,13 @@ int main() {
 			
 			// If any of the previous events caused us to get to the end of the chapter, exit cleanly before we encounter an error.
 			// The error in question would be invalid dereferencing of the end iterator.
-			if (curFrame == test.storyFrames.end()) {
+			if (curFrame == chapter.storyFrames.end()) {
 				return 0;
 			}
 
 			// Only render the frame if there is anything to do.
 			// All current events cause a screen change, so reaching this point means it has to be run.
-			renderFrame(SDLInfo, *curFrame, test.textBox);
+			renderFrame(SDLInfo, *curFrame, chapter.textBox);
 		}
 		
 		SDL_Delay(10);
