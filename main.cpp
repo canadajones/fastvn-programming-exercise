@@ -31,6 +31,7 @@
 
 #include "data.h"
 
+#include "loader.h"
 
 using std::cout; //NOLINT(misc-unused-using-decls)
 using std::cin;  //NOLINT(misc-unused-using-decls)
@@ -343,6 +344,10 @@ Schedule<Event> handleEvents() {
 
 
 int main() {
+	std::vector<std::string> vec = {"test-chapter0.json"};
+	JSONLoader a = {vec};
+
+
 	SDLManager SDLInfo;
 	
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
