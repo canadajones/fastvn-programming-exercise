@@ -3,19 +3,15 @@
 
 #include <string>
 #include <fstream>
+#include <sstream>
 
 // NOLINTNEXTLINE
 std::string loadFileToString(std::string path) {
+	// Open the file for reading
 	std::ifstream file;
+	std::stringstream string;
 	file.open(path, std::ios::in);
-		
-	std::string completeString;
-	std::string inputLine;
-	
-	while (std::getline(file, inputLine)) {
-		completeString.append(inputLine + "\n");
-	}
-	return completeString;
+	string << file.rdbuf();
+	return string.str();
 }
-
 #endif

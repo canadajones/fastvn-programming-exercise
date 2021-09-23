@@ -1,3 +1,6 @@
+#ifndef IMAGE_HEADER
+#define IMAGE_HEADER
+
 #include <memory>
 #include <stdexcept>
 
@@ -8,8 +11,7 @@
 #include <SDL2/SDL_image.h>
 
 
-#ifndef IMAGE_HEADER
-#define IMAGE_HEADER
+
 namespace vnpge {
 
 // NOLINTNEXTLINE(misc-definitions-in-headers)

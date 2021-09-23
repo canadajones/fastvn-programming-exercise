@@ -1,12 +1,12 @@
+#ifndef SCHEDULER_HEADER
+#define SCHEDULER_HEADER
+
 #include <string>
 #include <vector>
 #include <iterator>
 #include <iostream>
 
 #include "structures.h"
-
-#ifndef SCHEDULER_HEADER
-#define SCHEDULER_HEADER
 
 enum struct Action : int {
 	nothing,

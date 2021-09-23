@@ -1,3 +1,5 @@
+#ifndef STRUCTURES_HEADER 
+#define STRUCTURES_HEADER
 
 #include <stdexcept>
 #include <string>
@@ -5,10 +7,6 @@
 
 #include <iostream>
 
-
-
-#ifndef STRUCTURES_HEADER 
-#define STRUCTURES_HEADER
 
 // Nullary function that's handy for use as a breakpoint hook. In the debugger, set a breakpoint on it and step until you've returned
 // If using gdb, typing 'break brkpoint()' will accomplish this

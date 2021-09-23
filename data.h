@@ -1,3 +1,6 @@
+#ifndef DATALOAD_HEADER
+#define DATALOAD_HEADER
+
 #include <vector>
 #include <string>
 #include <iostream>
@@ -9,8 +12,7 @@
 #include "structures.h"
 #include "chapter.h"
 
-#ifndef DATALOAD_HEADER
-#define DATALOAD_HEADER
+
 
 using namespace vnpge;
 

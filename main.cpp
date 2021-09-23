@@ -31,7 +31,7 @@
 
 #include "data.h"
 
-#include "loader.h"
+#include "jsonloader.h"
 
 using std::cout; //NOLINT(misc-unused-using-decls)
 using std::cin;  //NOLINT(misc-unused-using-decls)
@@ -264,7 +264,6 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 
 	SDL_FillRect(screenSurface, nullptr, SDL_MapRGB(screenSurface->format, 0x00, 0x00, 0x00));
 	
-	// Dimensions in posMaps are ignored in blitImageConstAspectRatio
 	PositionMapping posMap = {
 		.srcPos = {0.5, 0.5},
 		.destPos = {0.5, 0.5},
@@ -274,6 +273,7 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 
 	// Characters
 	
+	// TODO: custom expression handlers
 	blitImageConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, curFrame.position, 80);
 
 	// Text
@@ -333,6 +333,9 @@ Schedule<Event> handleEvents() {
 						events.emplace_back(Action::window_resized, event.window.data1, event.window.data2);
 					}
 					break;
+					case SDL_WINDOWEVENT_CLOSE: {
+						events.emplace_back(Action::clean_exit);
+					}
 				}
 			}
 			break;

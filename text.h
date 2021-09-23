@@ -1,3 +1,6 @@
+#ifndef TEXTBOX_HEADER
+#define TEXTBOX_HEADER
+
 #include <memory>
 #include <stdexcept>
 #include <functional>
@@ -15,8 +18,7 @@
 #include "structures.h"
 #include "image.h"
 
-#ifndef TEXTBOX_HEADER
-#define TEXTBOX_HEADER
+
 namespace vnpge {
 
 class DialogueFont {

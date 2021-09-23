@@ -1,3 +1,6 @@
+#ifndef CHAPTER_HEADER
+#define CHAPTER_HEADER
+
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -7,9 +10,6 @@
 #include "character.h"
 #include "text.h"
 
-
-#ifndef CHAPTER_HEADER
-#define CHAPTER_HEADER
 namespace vnpge {
 
 // NOLINTNEXTLINE(misc-definitions-in-headers)
