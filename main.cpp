@@ -1,3 +1,4 @@
+#include <SDL2/SDL_render.h>
 #define SDL_MAIN_HANDLED
 
 #include <iostream>
@@ -50,6 +51,7 @@ class SDLManager {
 	SDL_Window* window;
 	SDL_Surface* screenSurface;
 	Image screen;
+	SDL_Renderer* renderer;
 	
 	public:
 	SDLManager() {
@@ -83,8 +85,10 @@ class SDLManager {
 			throw std::runtime_error(err.append(SDL_GetError()));
 		}
 
-
+		// Create Image container for the screen surface
 		screen = Image(screenSurface, true);
+
+		renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	}
 
 	SDLManager(const SDLManager&) = delete;
@@ -92,16 +96,20 @@ class SDLManager {
 
 	~SDLManager() {
 		
+
 		// Unload font support
 		TTF_Quit();
 
 		// Unload image format loading support
 		IMG_Quit();
 		
-		//Destroy window
+		// Destroy renderer before window (probably fine to omit this but not chanceing it)
+		SDL_DestroyRenderer(renderer);
+		
+		// Destroy window
 		SDL_DestroyWindow(window);
 		
-		//Quit SDL subsystems
+		// Quit SDL subsystems
 		SDL_Quit();
 	}
 
@@ -113,6 +121,9 @@ class SDLManager {
 		return window;
 	}
 
+	SDL_Renderer* getRenderer() {
+		return renderer;
+	}
 	Image getScreenImage() {
 		return Image(SDL_GetWindowSurface(window), true);
 	}
