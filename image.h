@@ -32,7 +32,8 @@ class Image {
 		std::string url;
 		
 		std::shared_ptr<SDL_Surface> imageSurface;
-	
+
+		std::shared_ptr<SDL_Texture> imageTexture;
 	public:
 		/**
 		 * @brief Construct a new Image object from scratch.
