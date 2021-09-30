@@ -1,3 +1,4 @@
+#include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_render.h>
 #define SDL_MAIN_HANDLED
 
@@ -201,6 +202,79 @@ int blitImageConstAspectRatio(Image& src, Image& dest, PositionMapping posMap, u
 
 	return SDL_BlitScaled(src.getSurface(), nullptr, dest.getSurface(), &pos);
 };
+/**
+ * @brief Blits an Image onto another at a specified position
+ * 
+ * @param src Source image.
+ * @param dest Destination image.
+ * @param posMap Position mapping between source and destination. Ignores widths and heights and uses those of the surfaces instead. 
+ * @param scale_percentage Percentage points to scale the source by before blitting.
+ * @return The return status code of the underlying SDL_BlitScaled function. 
+ */
+int blitTextureConstAspectRatio(SDL_Renderer* renderer, SDL_Texture* src, PositionMapping posMap, uint scale_percentage = 100) {
+	
+	// The SDL gods demand a position sacrifice
+	SDL_Rect pos;
+	
+	// Convenience variables
+	int srcTextureWidth;
+	int srcTextureHeight;
+	int destWidth;
+	int destHeight;
+
+	SDL_QueryTexture(src, nullptr, nullptr, &srcTextureWidth, &srcTextureHeight);
+	SDL_GetRendererOutputSize(renderer, &destWidth, &destHeight);
+
+	// Create both ratios now, to enable easier comparison with the later src ratios
+	double destWidthDivHeightRatio = static_cast<double>(destWidth) / static_cast<double>(destHeight);
+	double destHeightDivWidthRatio = static_cast<double>(destHeight) / static_cast<double>(destWidth);
+
+	// It's easier to define both the width/height and height/width ratios than it is to compute only one of the two, and then
+	// take the reciprocal of it. Besides, in cases of surfaces with extreme ratios, even though we're using doubles, one might end up with
+	// one of these being inaccurate. Note that this is purely theoretical, and that I reckon this will be fine for all practical purposes.
+	// Still neater code-wise though, so I'm keeping this for the foreseeable future.
+	double srcWidthDivHeightRatio = static_cast<double>(srcTextureWidth) / static_cast<double>(srcTextureHeight);
+	double srcHeightDivWidthRatio = static_cast<double>(srcTextureHeight) / static_cast<double>(srcTextureWidth);
+	
+	// Reduce the integer percentage to a double we can multiply into other expressions
+	double scale = static_cast<double>(scale_percentage) / static_cast<double>(100.0);
+
+	// This is a tricky bit of application-specific code
+	// Essentially, if the aspect ratio of the src and dest mismatch, different space-filling methods must be used
+	// If srcW/srcH < destW/destH, or in other words, the source is less wide than the destination, it will fill the dest tall-wise
+	// In the opposite case, the source is wider, and it will fill up the width as much as possible
+	// If they are of equal aspect ratio, the method used is irrelevant, and either will work
+	// Note that the 'or' here is technically redundant. Either both checks will succeed, or both will fail.
+	// In cases of (hypothetical) float distortion, one of these checks might (hypothetically) fail, but both shouldn't
+	// Therefore there is an or here, though it is highly unlikely it would come to use.
+	if (srcWidthDivHeightRatio < destWidthDivHeightRatio || srcHeightDivWidthRatio > destHeightDivWidthRatio) {
+		pos.h = static_cast<uint>(std::round(scale * destHeight));
+		pos.w = static_cast<uint>(std::round(scale * destHeight * srcWidthDivHeightRatio));
+	}
+	else {
+		pos.h = static_cast<uint>(std::round(scale * destWidth * srcHeightDivWidthRatio));
+		pos.w = static_cast<uint>(std::round(scale * destWidth));
+	}
+
+
+	AbsoluteDimensions srcDim = {
+		.w = static_cast<uint>(pos.w),
+		.h = static_cast<uint>(pos.h)
+	};
+
+	AbsoluteDimensions destDim = {
+		.w = static_cast<uint>(destWidth),
+		.h = static_cast<uint>(destHeight)
+	};
+	// Get x and y coordinates of the screen to be blitted
+	AbsolutePosition xy = getPixelPosfromPosition(srcDim, destDim, posMap);
+
+	pos.x = xy.x;
+	pos.y = xy.y;
+
+
+	return SDL_RenderCopy(renderer, src, nullptr, &pos);
+};
 
 
 void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) {
@@ -293,6 +367,72 @@ void renderFrame(SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 	SDL_UpdateWindowSurface(window);
 
 }
+
+class TexContainer {
+	public:
+	std::shared_ptr<SDL_Texture> bg;
+	std::shared_ptr<SDL_Texture> character;
+};
+
+void renderFrameAccel(SDLManager& SDLInfo, Frame& curFrame, TexContainer& texCon, TextBox textBox) {
+	/* Render loop:
+	   	
+		Background - x
+			|- Transforms
+			|- Transitions
+		Characters
+			|- Position - x
+			|- Multiple in a frame
+			|- Expressions - x
+			|		|- Expression builder?
+			|- Animations?
+			|- Transforms
+			|- Transitions
+		Dialogue
+			|- Text box - x
+			|- Text - x
+			|- Autofitting - x?
+			|- Custom design?
+		Graphical interface
+			|- Keymaps - x?
+			|- Menu
+			|- Mouse clickies
+			
+	*/
+
+	// Initial setup
+	SDL_Renderer* renderer = SDLInfo.getRenderer();
+	SDL_Window* window = SDLInfo.getWindow();
+	Image screen = SDLInfo.getScreenImage();
+
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+	// Background
+	
+	SDL_RenderClear(renderer);
+	
+	SDL_FillRect(screen.getSurface(), nullptr, SDL_MapRGB(screen.getSurface()->format, 255, 255, 255));
+	PositionMapping posMap = {
+		.srcPos = {0.5, 0.5},
+		.destPos = {0.5, 0.5},
+	};
+	
+	blitTextureConstAspectRatio(renderer, texCon.bg.get(), posMap, 100);
+
+	// Characters
+	
+	// TODO: custom expression handlers
+	//blitTextureConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, curFrame.position, 80);
+	blitTextureConstAspectRatio(renderer, texCon.character.get(), curFrame.position, 80);
+	SDL_RenderPresent(renderer);
+
+	// Text
+	renderText(screen.getSurface(), textBox, curFrame.textDialogue);
+	
+	
+	SDL_UpdateWindowSurface(window);
+
+}
 Schedule<Event> handleEvents() {
 	
 	std::vector<Event> events;
@@ -358,21 +498,19 @@ Schedule<Event> handleEvents() {
 
 
 int main() {
-	
-	JSONLoader a = {"index.json"};
-
 
 	SDLManager SDLInfo;
 	
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
 	// DEPRECATED
 	// Chapter test = initTest(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
-	Chapter chapter = a.loadChapter(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
+	Chapter chapter = JSONLoader{"index.json"}.loadChapter(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
 
 
 	auto& curFrame = chapter.curFrame;
-	renderFrame(SDLInfo, *curFrame.base(), chapter.textBox);
+	renderFrame(SDLInfo, *curFrame, chapter.textBox);
 	
+	TexContainer texCon;
 	while (true) {
 		for (auto events = handleEvents(); events.isValid(); events.next()) {
 			auto ev = events.get();
@@ -419,10 +557,14 @@ int main() {
 			if (curFrame == chapter.storyFrames.end()) {
 				return 0;
 			}
+			texCon.bg.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->bg.getSurface()), SDL_DestroyTexture);
+			
+			texCon.character.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->storyCharacter.expressions.at(curFrame->expression).getSurface()), SDL_DestroyTexture);
+			
 
 			// Only render the frame if there is anything to do.
 			// All current events cause a screen change, so reaching this point means it has to be run.
-			renderFrame(SDLInfo, *curFrame, chapter.textBox);
+			renderFrameAccel(SDLInfo, *curFrame, texCon,chapter.textBox);
 		}
 		
 		SDL_Delay(10);
