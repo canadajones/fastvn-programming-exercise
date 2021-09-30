@@ -1,6 +1,7 @@
 #ifndef TEXTBOX_HEADER
 #define TEXTBOX_HEADER
 
+#include <SDL2/SDL_render.h>
 #include <memory>
 #include <stdexcept>
 #include <functional>
@@ -81,6 +82,10 @@ class TextBox {
 	std::shared_ptr<SDL_Surface> box;
 	std::shared_ptr<SDL_Surface> displayBox;
 	
+	std::shared_ptr<SDL_Renderer> renderer;
+	std::shared_ptr<SDL_Texture> accelBox;
+	std::shared_ptr<SDL_Texture> accelDisplayBox;
+
 	// May change at an arbitrary time
 	DialogueFont font;
 	std::string fontName;
@@ -97,8 +102,11 @@ class TextBox {
 	 * @param font The font to use, in form of a DialogueFont.
 	 * @param boxGenerator A function accepting the absolute dimensions of the destination surface, as well as the relative dimensions this box occupies thereon.
 	 */
-	TextBox(AbsoluteDimensions surfDimensions, std::string font, TextBoxCreator boxGenerator) :
+	TextBox(AbsoluteDimensions surfDimensions, std::string font, TextBoxCreator boxGenerator, std::shared_ptr<SDL_Renderer> renderer) :
+		
 		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, displayBox{makeNewSurface(box->w - 48, box->h - 48), SDL_FreeSurface},
+		renderer{renderer}, accelBox{SDL_CreateTextureFromSurface(renderer.get(), box.get()), SDL_DestroyTexture},
+		accelDisplayBox{SDL_CreateTextureFromSurface(renderer.get(), displayBox.get()), SDL_DestroyTexture},
 		font{font, getPtSize(surfDimensions)}, fontName{font}, textSurface{nullptr}, lines{0} {
 			SDL_SetSurfaceBlendMode(displayBox.get(), SDL_BLENDMODE_ADD);
 		};
@@ -113,6 +121,13 @@ class TextBox {
 	
 	SDL_Surface* getText() const {
 		return displayBox.get();
+	}
+	SDL_Texture* getBoxAccel() const {
+		return accelBox.get();
+	};
+	
+	SDL_Texture* getTextAccel() const {
+		return accelDisplayBox.get();
 	}
 
 	SDL_Surface* generateDisplayText(std::string text) {
@@ -131,9 +146,11 @@ class TextBox {
 
 	AbsoluteDimensions updateResolution(AbsoluteDimensions surfDimensions, TextBoxCreator boxGenerator) {
 		box.reset(boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface);
-
 		displayBox.reset(makeNewSurface(box->w - 48 , box->h - 48 ), SDL_FreeSurface);
 		
+		accelBox.reset(SDL_CreateTextureFromSurface(renderer.get(), box.get()), SDL_DestroyTexture);
+		accelDisplayBox.reset(SDL_CreateTextureFromSurface(renderer.get(), displayBox.get()), SDL_DestroyTexture);
+
 		font = {fontName, getPtSize(surfDimensions)};
 		return {static_cast<uint>(box->w), static_cast<uint>(box->h)};
 	};
@@ -148,6 +165,7 @@ class TextBox {
 		};
 		SDL_FillRect(displayBox.get(), nullptr, SDL_MapRGBA(displayBox->format, 0, 0, 0, 0));
 		SDL_BlitSurface(textSurface.get(), nullptr, displayBox.get(), &rect);
+		accelDisplayBox.reset(SDL_CreateTextureFromSurface(renderer.get(), displayBox.get()), SDL_DestroyTexture);
 	};
 
 	void scrollDown() {

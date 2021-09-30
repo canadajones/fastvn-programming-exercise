@@ -31,7 +31,8 @@
 #include "text.h"
 #include "schedule.h"
 
-#include "data.h"
+// DEPRECATED
+//#include "data.h"
 
 #include "jsonloader.h"
 
@@ -44,15 +45,12 @@ using namespace vnpge;
 
 typedef unsigned int uint;
 
-
-bool activeTransform = false;
-
 class SDLManager {
 	private:
 	SDL_Window* window;
 	SDL_Surface* screenSurface;
 	Image screen;
-	SDL_Renderer* renderer;
+	std::shared_ptr<SDL_Renderer> renderer;
 	
 	public:
 	SDLManager() {
@@ -89,7 +87,7 @@ class SDLManager {
 		// Create Image container for the screen surface
 		screen = Image(screenSurface, true);
 
-		renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+		renderer.reset(SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
 	}
 
 	SDLManager(const SDLManager&) = delete;
@@ -104,8 +102,6 @@ class SDLManager {
 		// Unload image format loading support
 		IMG_Quit();
 		
-		// Destroy renderer before window (probably fine to omit this but not chanceing it)
-		SDL_DestroyRenderer(renderer);
 		
 		// Destroy window
 		SDL_DestroyWindow(window);
@@ -123,15 +119,15 @@ class SDLManager {
 	}
 
 	SDL_Renderer* getRenderer() {
+		return renderer.get();
+	}
+	std::shared_ptr<SDL_Renderer> getRendererShared() {
 		return renderer;
 	}
 	Image getScreenImage() {
 		return Image(SDL_GetWindowSurface(window), true);
 	}
 };
-
-
-
 
 /**
  * @brief Blits an Image onto another at a specified position
@@ -276,7 +272,6 @@ int blitTextureConstAspectRatio(SDL_Renderer* renderer, SDL_Texture* src, Positi
 	return SDL_RenderCopy(renderer, src, nullptr, &pos);
 };
 
-
 void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) {
 
 	PositionMapping posMap = textBox.getPosMap();
@@ -374,6 +369,48 @@ class TexContainer {
 	std::shared_ptr<SDL_Texture> character;
 };
 
+void renderTextAccel(SDL_Renderer* renderer, TextBox& textBox, std::string text) {
+
+	PositionMapping posMap = textBox.getPosMap();
+	posMap = {
+		.srcPos = posMap.srcPos,
+		.destPos = posMap.destPos
+	};
+
+	AbsoluteDimensions srcDim = {
+		.w = static_cast<uint>(textBox.getBox()->w),
+		.h = static_cast<uint>(textBox.getBox()->h),
+	};
+
+	int x;
+	int y;
+	SDL_GetRendererOutputSize(renderer, &x, &y);
+	
+	AbsoluteDimensions destDim = {
+		.w = static_cast<uint>(x),
+		.h = static_cast<uint>(y)
+	};
+	
+	AbsolutePosition xy = getPixelPosfromPosition(srcDim, destDim, posMap);
+
+	SDL_Rect pos = {
+		.x = xy.x,
+		.y = xy.y,
+		.w = textBox.getBox()->w,
+		.h = textBox.getBox()->h,
+	};
+
+	//SDL_BlitSurface(textBox.getBox(), nullptr, screenSurface, &pos);
+	SDL_RenderCopy(renderer, textBox.getBoxAccel(), nullptr, &pos);
+
+	// TODO: make this relative to the screen
+	pos.x += 20;
+	pos.y += 20;
+
+	//SDL_BlitSurface(textBox.getText(), nullptr, screenSurface, &pos);
+	SDL_RenderCopy(renderer, textBox.getTextAccel(), nullptr, &pos);
+};
+
 void renderFrameAccel(SDLManager& SDLInfo, Frame& curFrame, TexContainer& texCon, TextBox textBox) {
 	/* Render loop:
 	   	
@@ -402,7 +439,7 @@ void renderFrameAccel(SDLManager& SDLInfo, Frame& curFrame, TexContainer& texCon
 
 	// Initial setup
 	SDL_Renderer* renderer = SDLInfo.getRenderer();
-	SDL_Window* window = SDLInfo.getWindow();
+	//SDL_Window* window = SDLInfo.getWindow();
 	Image screen = SDLInfo.getScreenImage();
 
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -411,7 +448,7 @@ void renderFrameAccel(SDLManager& SDLInfo, Frame& curFrame, TexContainer& texCon
 	
 	SDL_RenderClear(renderer);
 	
-	SDL_FillRect(screen.getSurface(), nullptr, SDL_MapRGB(screen.getSurface()->format, 255, 255, 255));
+	//SDL_FillRect(screen.getSurface(), nullptr, SDL_MapRGB(screen.getSurface()->format, 255, 255, 255));
 	PositionMapping posMap = {
 		.srcPos = {0.5, 0.5},
 		.destPos = {0.5, 0.5},
@@ -424,13 +461,13 @@ void renderFrameAccel(SDLManager& SDLInfo, Frame& curFrame, TexContainer& texCon
 	// TODO: custom expression handlers
 	//blitTextureConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, curFrame.position, 80);
 	blitTextureConstAspectRatio(renderer, texCon.character.get(), curFrame.position, 80);
-	SDL_RenderPresent(renderer);
+	
 
 	// Text
-	renderText(screen.getSurface(), textBox, curFrame.textDialogue);
+	renderTextAccel(renderer, textBox, curFrame.textDialogue);
 	
-	
-	SDL_UpdateWindowSurface(window);
+	SDL_RenderPresent(renderer);
+	//SDL_UpdateWindowSurface(window);
 
 }
 Schedule<Event> handleEvents() {
@@ -496,7 +533,6 @@ Schedule<Event> handleEvents() {
 	return evSched;
 }
 
-
 int main() {
 
 	SDLManager SDLInfo;
@@ -504,7 +540,7 @@ int main() {
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
 	// DEPRECATED
 	// Chapter test = initTest(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
-	Chapter chapter = JSONLoader{"index.json"}.loadChapter(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
+	Chapter chapter = JSONLoader{"index.json"}.loadChapter(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h), SDLInfo.getRendererShared());
 
 
 	auto& curFrame = chapter.curFrame;

@@ -1,6 +1,7 @@
 #ifndef CHAPTER_HEADER
 #define CHAPTER_HEADER
 
+#include <SDL2/SDL_render.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -128,8 +129,9 @@ class Chapter {
 		TextBox textBox;
 		std::vector<Frame>::iterator curFrame;
 	public:
-		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames, AbsoluteDimensions pixelDimensions, std::string font, TextBoxCreator boxGenerator = makeTextBox) 
-		: chapterName{name}, storyCharacters{demetaCharacterVec(metaCharacters)}, textBox{pixelDimensions, font, boxGenerator} {
+		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames,
+		AbsoluteDimensions pixelDimensions, std::string font, std::shared_ptr<SDL_Renderer> renderer, TextBoxCreator boxGenerator = makeTextBox) 
+		: chapterName{name}, storyCharacters{demetaCharacterVec(metaCharacters)}, textBox{pixelDimensions, font, boxGenerator, renderer} {
 			storyFrames.reserve(metaFrames.size());
 			
 			std::unordered_map<std::string, Character&> charIDToRefMap;
