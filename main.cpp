@@ -20,7 +20,7 @@
 #include "image.h"
 #include "text.h"
 #include "schedule.h"
-#include "video-sdl.h"
+#include "video-sdl-gpu.h"
 
 // DEPRECATED
 //#include "data.h"
@@ -41,7 +41,7 @@ typedef unsigned int uint;
 
 int main() {
 
-	SDLManager SDLInfo;
+	gpu::SDLManager SDLInfo;
 	
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
 	// DEPRECATED

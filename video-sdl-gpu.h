@@ -70,7 +70,7 @@ class TexContainer {
 };
 
 void renderTextAccel(SDL_Renderer* renderer, vnpge::TextBox& textBox, std::string text);
-void renderFrameAccel(SDLManager& SDLInfo, vnpge::Frame& curFrame, TexContainer& texCon, vnpge::TextBox textBox);
+void renderFrameAccel(gpu::SDLManager& SDLInfo, vnpge::Frame& curFrame, TexContainer& texCon, vnpge::TextBox textBox);
 Schedule<Event> handleEvents();
 }
 #endif

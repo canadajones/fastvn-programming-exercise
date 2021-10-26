@@ -244,8 +244,6 @@ void renderFrameAccel(SDLManager& SDLInfo, Frame& curFrame, TexContainer& texCon
 
 	// Initial setup
 	SDL_Renderer* renderer = SDLInfo.getRenderer();
-	//SDL_Window* window = SDLInfo.getWindow();
-	Image screen = SDLInfo.getScreenImage();
 
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
