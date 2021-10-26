@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/alex/github/fastvn-programming-exercise/build",
+  "command": "/usr/bin/g++    -g   -Wall -Wextra -Werror -Wno-unused-parameter -pthread -std=c++2a -o CMakeFiles/test1.dir/main.cpp.o -c /home/alex/github/fastvn-programming-exercise/main.cpp",
+  "file": "/home/alex/github/fastvn-programming-exercise/main.cpp"
+}
+]
