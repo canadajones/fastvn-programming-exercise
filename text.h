@@ -21,7 +21,8 @@
 
 
 namespace vnpge {
-
+SDL_Surface* makeNewSurface(uint w, uint h);
+SDL_Surface* makeTextBox(AbsoluteDimensions pixelDimensions, RelativeDimensions relDimensions);
 class DialogueFont {
 	private:
 		std::shared_ptr<TTF_Font> font;

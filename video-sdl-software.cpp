@@ -106,6 +106,7 @@ class SDLManager {
 	}
 };
 };
+
 using namespace sw;
 
 /**

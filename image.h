@@ -14,14 +14,7 @@
 
 namespace vnpge {
 
-// NOLINTNEXTLINE(misc-definitions-in-headers)
-SDL_Surface* makeNewSurface(uint w, uint h) {
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	return SDL_CreateRGBSurface(0, w, h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	#else
-	return SDL_CreateRGBSurface(0, w, h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	#endif
-};
+
 
 /**
  * @brief Image class that stores SDL bitmaps and metadata.

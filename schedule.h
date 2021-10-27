@@ -38,9 +38,9 @@ class Event {
 	}
 };
 //NOLINTNEXTLINE
-bool isIterEqual(std::vector<Event>::iterator it1, std::vector<Event>::iterator it2) {
+/*bool isIterEqual(std::vector<Event>::iterator it1, std::vector<Event>::iterator it2) {
 	return it1 == it2;
-};
+};*/
 
 // This is very inflexible; I'd make it so if I intended to use it in the future
 // However, since I don't need it, I'll just comment it out

@@ -19,78 +19,151 @@
 #include "text.h"
 #include "schedule.h"
 
-using namespace vnpge;
+#include "video-sdl-gpu.h"
 
-class SDLManager {
-	private:
-	SDL_Window* window;
-	std::shared_ptr<SDL_Renderer> renderer;
-	
-	public:
-	SDLManager() {
-		// Initialize SDL
-		if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) < 0) {
-			std::string err = "SDL could not initialize! SDL_Error: ";
-			throw std::runtime_error(err.append(SDL_GetError()));
-		} 	
+namespace vnpge {
+AbsolutePosition getPixelPosfromPosition(AbsoluteDimensions& srcDim, AbsoluteDimensions& destDim, PositionMapping& posMap) {
 
-		// Load support for the JPG and PNG image formats
-		int flags = IMG_INIT_JPG | IMG_INIT_PNG;
-		if (IMG_Init(flags) ^ flags) {
-			std::string err = "SDL_Image could not initialize! IMG_Error: ";
-			throw std::runtime_error(err.append(IMG_GetError()));
-		}
+	// It contains a pair of points, plus the widths and heights of the two surfaces
+	// The points are in the form of normalised doubles, where 0,0 is the top left corner,
+	// and 1,1 is the bottom right corner.
+	// Each has been normalised according to its own surface's width and height, so we first have to unpack this into pixels
+	// We need the pixels because we need to have a unit of distance which is the same distance in both coordinate systems
+	// Simply using the doubles would give an incorrect result, as it would be equivalent to dest_x/dest/width - src_x/src_width,
+	// which I hope is obvious wouldn't work. You can't just add and subtract percentages!
 
-		// Grab font rendering library
-		if (TTF_Init()) {
-			std::string err  = "TTF_Init: "; 
-			throw std::runtime_error(err.append(TTF_GetError()));
-		}
+	int srcLocalPixPosX = srcDim.w * posMap.srcPos.x;
 
+	int srcLocalPixPosY = srcDim.h * posMap.srcPos.y;
 
-		//Create window
-		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
+	int destLocalPixPosX = destDim.w * posMap.destPos.x;
 
-		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
+	int destLocalPixPosY = destDim.h * posMap.destPos.y;
 
-		if (window == nullptr) {
-			std::string err = "Window could not be created! SDL_Error: "; 
-			throw std::runtime_error(err.append(SDL_GetError()));
-		}
+	// Now that we have the variables unpacked, use them
+	// Technically, the src coordinates here are being used for their distance from the origin
+	// But since the taxicab distance and numerical value of the point is the same, it works just fine
 
-		// Initialise renderer as a GPU-accelerated one, that renders at vsynch, and that is destroyed by the proper SDL function
-		renderer.reset(SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
-	}
+	int srcDestPixPosX = static_cast<uint>(destLocalPixPosX - srcLocalPixPosX);
+	int srcDestPixPosY = static_cast<uint>(destLocalPixPosY - srcLocalPixPosY);
 
-	SDLManager(const SDLManager&) = delete;
-	SDLManager operator=(const SDLManager&) = delete;
-
-	~SDLManager() {
-		// Unload font support
-		TTF_Quit();
-
-		// Unload image format loading support
-		IMG_Quit();
-		
-		// Destroy window
-		SDL_DestroyWindow(window);
-		
-		// Quit SDL subsystems
-		SDL_Quit();
-	}
-
-
-	SDL_Window* getWindow() {
-		return window;
-	}
-
-	SDL_Renderer* getRenderer() {
-		return renderer.get();
-	}
-	std::shared_ptr<SDL_Renderer> getRendererShared() {
-		return renderer;
-	}
+	return {srcDestPixPosX, srcDestPixPosY};
 };
+SDL_Surface* makeTextBox(AbsoluteDimensions pixelDimensions, RelativeDimensions relDimensions) {
+	// Default simple text box
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, pixelDimensions.w*relDimensions.w, pixelDimensions.h*relDimensions.h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	#else
+	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, pixelDimensions.w*relDimensions.w, pixelDimensions.h*relDimensions.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	#endif
+	
+	if (textBoxSurface == nullptr) {
+		std::string err = "Surface could not be created! SDL_Error: "; 
+		throw std::runtime_error(err.append(SDL_GetError()));
+	}
+
+	SDL_Rect textBox = {
+		.x = 0,
+		.y = 0,
+		.w = textBoxSurface->w,
+		.h = textBoxSurface->h
+	};
+
+	// Fill with a transparent white
+	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0xFF, 0xFF, 0xFF, 0x7F));
+
+	textBox.x += 4;
+	textBox.y += 4;
+	textBox.w -= 8;
+	textBox.h -= 8;
+
+	// Fill with a transparent black inside the other rectangle, thereby creating a white border
+	// Note that FillRect does not blend alphas, so this alpha replaces the white's
+	// This is actually desirable, since the colours should have different alphas in order to feel equally transparent
+	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0x30, 0x30, 0x30, 0xAF));
+
+	return textBoxSurface;
+};
+
+SDL_Surface* makeNewSurface(uint w, uint h) {
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	return SDL_CreateRGBSurface(0, w, h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	#else
+	return SDL_CreateRGBSurface(0, w, h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	#endif
+};
+/*namespace gpu {
+	class SDLManager {
+		private:
+		SDL_Window* window;
+		std::shared_ptr<SDL_Renderer> renderer;
+		
+		public:
+		SDLManager() {
+			// Initialize SDL
+			if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) < 0) {
+				std::string err = "SDL could not initialize! SDL_Error: ";
+				throw std::runtime_error(err.append(SDL_GetError()));
+			} 	
+
+			// Load support for the JPG and PNG image formats
+			int flags = IMG_INIT_JPG | IMG_INIT_PNG;
+			if (IMG_Init(flags) ^ flags) {
+				std::string err = "SDL_Image could not initialize! IMG_Error: ";
+				throw std::runtime_error(err.append(IMG_GetError()));
+			}
+
+			// Grab font rendering library
+			if (TTF_Init()) {
+				std::string err  = "TTF_Init: "; 
+				throw std::runtime_error(err.append(TTF_GetError()));
+			}
+
+
+			//Create window
+			window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
+
+			//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
+
+			if (window == nullptr) {
+				std::string err = "Window could not be created! SDL_Error: "; 
+				throw std::runtime_error(err.append(SDL_GetError()));
+			}
+
+			// Initialise renderer as a GPU-accelerated one, that renders at vsynch, and that is destroyed by the proper SDL function
+			renderer.reset(SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer);
+		}
+
+		SDLManager(const SDLManager&) = delete;
+		SDLManager operator=(const SDLManager&) = delete;
+
+		~SDLManager() {
+			// Unload font support
+			TTF_Quit();
+
+			// Unload image format loading support
+			IMG_Quit();
+			
+			// Destroy window
+			SDL_DestroyWindow(window);
+			
+			// Quit SDL subsystems
+			SDL_Quit();
+		}
+
+
+		SDL_Window* getWindow() {
+			return window;
+		}
+
+		SDL_Renderer* getRenderer() {
+			return renderer.get();
+		}
+		std::shared_ptr<SDL_Renderer> getRendererShared() {
+			return renderer;
+		}
+	};
+};*/
 
 
 /**
@@ -157,7 +230,7 @@ int renderTextureConstAspectRatio(SDL_Renderer* renderer, SDL_Texture* src, Posi
 		.w = static_cast<uint>(destWidth),
 		.h = static_cast<uint>(destHeight)
 	};
-	// Get x and y coordinates of the screen to be blitted
+	// Get x and y coordinates of the texture on the rendering plane
 	AbsolutePosition xy = getPixelPosfromPosition(srcDim, destDim, posMap);
 
 	pos.x = xy.x;
@@ -216,7 +289,7 @@ void renderTextAccel(SDL_Renderer* renderer, TextBox& textBox, std::string text)
 	SDL_RenderCopy(renderer, textBox.getTextAccel(), nullptr, &pos);
 };
 
-void renderFrameAccel(SDLManager& SDLInfo, Frame& curFrame, TexContainer& texCon, TextBox textBox) {
+void renderFrameAccel(gpu::SDLManager& SDLInfo, Frame& curFrame, TexContainer& texCon, TextBox textBox) {
 	/* Render loop:
 	   	
 		Background - x
@@ -334,4 +407,5 @@ Schedule<Event> handleEvents() {
 	}
 	Schedule<Event> evSched = {events};
 	return evSched;
-}
+};
+};

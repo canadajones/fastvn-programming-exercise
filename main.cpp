@@ -106,7 +106,7 @@ int main() {
 
 			// Only render the frame if there is anything to do.
 			// All current events cause a screen change, so reaching this point means it has to be run.
-			renderFrameAccel(SDLInfo, *curFrame, texCon,chapter.textBox);
+			renderFrameAccel(SDLInfo, *curFrame, texCon, chapter.textBox);
 		}
 		
 		SDL_Delay(10);

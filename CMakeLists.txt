@@ -7,9 +7,9 @@ project(test1-vn VERSION 0.1.0 LANGUAGES CXX)
 # This apparently may cause issues with non-makefile generators. Comment out if needed
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-#set(CMAKE_VERBOSE_MAKEFILE TRUE)
+set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
-add_executable(test1 main.cpp)
+add_executable(test1 video-sdl-gpu.cpp main.cpp)
 
 target_link_libraries(test1 SDL2 SDL2_image SDL2_ttf boost_json)
 
