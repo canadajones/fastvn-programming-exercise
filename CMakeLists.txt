@@ -11,7 +11,8 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
 add_executable(test1 video-sdl-gpu.cpp main.cpp)
 
-target_link_libraries(test1 SDL2 SDL2_image SDL2_ttf boost_json)
+target_include_directories(test1 PUBLIC /usr/include/x86_64-linux-gnu/)
+target_link_libraries(test1 PUBLIC SDL2 SDL2_image SDL2_ttf boost_json)
 
 # Those sweet, sweet designated initialisers force me to use C++20
 set_property(TARGET test1 PROPERTY CXX_STANDARD 20)

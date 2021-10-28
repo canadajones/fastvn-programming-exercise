@@ -241,11 +241,6 @@ int renderTextureConstAspectRatio(SDL_Renderer* renderer, SDL_Texture* src, Posi
 };
 
 
-class TexContainer {
-	public:
-	std::shared_ptr<SDL_Texture> bg;
-	std::shared_ptr<SDL_Texture> character;
-};
 
 void renderTextAccel(SDL_Renderer* renderer, TextBox& textBox, std::string text) {
 

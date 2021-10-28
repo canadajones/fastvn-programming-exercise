@@ -43,7 +43,7 @@ class JSONLoader : ChapterLoader {
 
 	
 
-	Chapter loadChapter(uint w, uint h, std::shared_ptr<SDL_Renderer> renderer) {
+	Chapter loadChapter(AbsoluteDimensions screenDims, std::shared_ptr<SDL_Renderer> renderer) {
 		
 		// TODO: make this loop through all paths instead of just picking the first one
 		// This is simple to do, but would probably require nesting all of this function inside of a loop
@@ -122,7 +122,7 @@ class JSONLoader : ChapterLoader {
 			// This throws if any character IDs in the source JSON were misspelled
 			metaFrames.emplace_back(textDialogue, charIDToMetaRefMap.at(characterID), expression, posMap, background);
 		}
-		return {chapterName, metaCharacters, metaFrames, {.w = w, .h = h}, "BonaNova-Italic.ttf", renderer};
+		return {chapterName, metaCharacters, metaFrames, screenDims, "BonaNova-Italic.ttf", renderer};
 	}
 };
 }

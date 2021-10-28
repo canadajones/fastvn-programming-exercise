@@ -1,5 +1,6 @@
 #ifndef VN_VIDEO_SDL_GPU_HEADER
 #define VN_VIDEO_SDL_GPU_HEADER
+#include <SDL2/SDL_render.h>
 #include <memory>
 #include <vector>
 #include <string>
@@ -52,9 +53,9 @@ namespace gpu {
 
 
 			//Create window
-			window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
+			//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
-			//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
+			window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
 
 			if (window == nullptr) {
 				std::string err = "Window could not be created! SDL_Error: "; 
@@ -80,19 +81,24 @@ namespace gpu {
 			
 			// Quit SDL subsystems
 			SDL_Quit();
-		}
+		};
 
 
 		SDL_Window* getWindow() {
 			return window;
-		}
+		};
 
 		SDL_Renderer* getRenderer() {
 			return renderer.get();
-		}
+		};
 		std::shared_ptr<SDL_Renderer> getRendererShared() {
 			return renderer;
-		}
+		};
+		AbsoluteDimensions getScreenDimensions() {
+			int w, h;
+			SDL_GetRendererOutputSize(renderer.get(), &w, &h);
+			return {static_cast<uint>(w),static_cast<uint>(h)};
+		};
 	};
 };
 
@@ -105,7 +111,7 @@ namespace gpu {
  * @param scale_percentage Percentage points to scale the source by before rendering.
  * @return The return status code of the underlying SDL_RenderCopy function. 
  */
-int renderTextureConstAspectRatio(SDL_Renderer* renderer, SDL_Texture* src, vnpge::PositionMapping posMap, uint scale_percentage = 100);
+int renderTextureConstAspectRatio(SDL_Renderer* renderer, SDL_Texture* src, vnpge::PositionMapping posMap, uint scale_percentage);
 
 void renderText(SDL_Surface* screenSurface, vnpge::TextBox& textBox, std::string text);
 
