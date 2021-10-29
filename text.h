@@ -121,8 +121,9 @@ class TextBox {
 	};
 	
 	SDL_Surface* getText() const {
-		return displayBox.get();
+		return textSurface.get();
 	}
+
 	SDL_Texture* getBoxAccel() const {
 		return accelBox.get();
 	};
@@ -136,7 +137,7 @@ class TextBox {
 		// TODO: make per-character text colouring a thing
 		SDL_Color color = {255, 255, 255, 255};
 		textSurface.reset(TTF_RenderUTF8_Blended_Wrapped(font.getFont(), text.c_str(), color, box->w - 48), SDL_FreeSurface);
-		SDL_SetSurfaceBlendMode(textSurface.get(), SDL_BLENDMODE_NONE);
+		//SDL_SetSurfaceBlendMode(textSurface.get(), SDL_BLENDMODE_NONE);
 		
 		// Reset text position upon text change
 		lines = 0;
@@ -169,7 +170,8 @@ class TextBox {
 		h = 0;
 		SDL_FillRect(displayBox.get(), nullptr, SDL_MapRGBA(displayBox->format, 0, 0, 0, 0));
 		SDL_BlitSurface(textSurface.get(), nullptr, displayBox.get(), &rect);
-		accelDisplayBox.reset(SDL_CreateTextureFromSurface(renderer.get(), displayBox.get()), SDL_DestroyTexture);
+		accelDisplayBox.reset(SDL_CreateTextureFromSurface(renderer.get(), textSurface.get()), SDL_DestroyTexture);
+		SDL_QueryTexture(accelDisplayBox.get(), nullptr, nullptr, &w, &h);
 	};
 
 	void scrollDown() {

@@ -276,6 +276,12 @@ void renderTextAccel(SDL_Renderer* renderer, TextBox& textBox, std::string text)
 	// TODO: make this relative to the screen
 	pos.x += 20;
 	pos.y += 20;
+	pos = {
+		.x = xy.x + 20,
+		.y = xy.y + 20,
+		.w = textBox.getText()->w,
+		.h = textBox.getText()->h,
+	};
 
 	//SDL_BlitSurface(textBox.getText(), nullptr, screenSurface, &pos);
 	
