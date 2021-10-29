@@ -43,7 +43,7 @@ class JSONLoader : ChapterLoader {
 
 	
 
-	Chapter loadChapter(AbsoluteDimensions screenDims, std::shared_ptr<SDL_Renderer> renderer) {
+	Chapter loadChapter(AbsoluteDimensions screenDims, SDL_Renderer* renderer) {
 		
 		// TODO: make this loop through all paths instead of just picking the first one
 		// This is simple to do, but would probably require nesting all of this function inside of a loop

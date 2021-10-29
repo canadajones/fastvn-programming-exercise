@@ -9,8 +9,6 @@
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_rect.h>
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_keycode.h>
 
 #include <SDL2/SDL_image.h>
 
@@ -38,10 +36,10 @@ namespace vnpge {
 
 			~SDLManager();
 
-
 			SDL_Surface* getScreenSurface();
 			SDL_Window* getWindow();
 			Image getScreenImage();
+			AbsoluteDimensions getScreenDimensions();
 		};
 	};
 

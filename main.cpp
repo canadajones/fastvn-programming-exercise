@@ -1,5 +1,4 @@
-#include <SDL2/SDL_pixels.h>
-#include <SDL2/SDL_render.h>
+
 #define SDL_MAIN_HANDLED
 
 #include <iostream>
@@ -14,13 +13,19 @@
 #include <cassert>
 #include <cmath>
 
+#include <SDL2/SDL_pixels.h>
+#include <SDL2/SDL_render.h>
+
+#include "video-sdl-common.h"
+#include "video-sdl-gpu.h"
+//#include "video-sdl-software.h"
 
 #include "structures.h"
 #include "chapter.h"
 #include "image.h"
 #include "text.h"
 #include "schedule.h"
-#include "video-sdl-gpu.h"
+
 
 // DEPRECATED
 //#include "data.h"
@@ -40,21 +45,23 @@ typedef unsigned int uint;
 
 
 int main() {
-
 	gpu::SDLManager SDLInfo;
 	
+	//sw::SDLManager SDLInfo;
 	//SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
+
 	// DEPRECATED
 	// Chapter test = initTest(static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h));
-	Chapter chapter = JSONLoader{"index.json"}.loadChapter(SDLInfo.getScreenDimensions(), SDLInfo.getRendererShared());
-
+	
+	// Load chapter data
+	Chapter chapter = JSONLoader{"index.json"}.loadChapter(SDLInfo.getScreenDimensions(), SDLInfo.getRenderer());
 
 	auto& curFrame = chapter.curFrame;
+	
 	TexContainer texCon;
 	texCon.bg.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->bg.getSurface()), SDL_DestroyTexture);
 	texCon.character.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->storyCharacter.expressions.at(curFrame->expression).getSurface()), SDL_DestroyTexture);
 	renderFrameAccel(SDLInfo, *curFrame, texCon, chapter.textBox);
-	
 	
 	while (true) {
 		for (auto events = handleEvents(); events.isValid(); events.next()) {

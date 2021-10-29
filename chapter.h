@@ -95,7 +95,7 @@ class Chapter {
 		std::vector<Frame>::iterator curFrame;
 	public:
 		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames,
-		AbsoluteDimensions pixelDimensions, std::string font, std::shared_ptr<SDL_Renderer> renderer, TextBoxCreator boxGenerator = makeTextBox) 
+		AbsoluteDimensions pixelDimensions, std::string font, SDL_Renderer* renderer, TextBoxCreator boxGenerator = makeTextBox) 
 		: chapterName{name}, storyCharacters{demetaCharacterVec(metaCharacters)}, textBox{pixelDimensions, font, boxGenerator, renderer} {
 			storyFrames.reserve(metaFrames.size());
 			

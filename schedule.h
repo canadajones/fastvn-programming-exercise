@@ -87,6 +87,12 @@ class Event {
 	return "{ Action=" + eventName + ", data1=" + data1 + ", data2=" + data2 + " };";
 }
 */
+
+/**
+ * @brief Queue-like data structure to handle ordered streams of things like input events and render calls
+ * 
+ * @tparam T 
+ */
 template <typename T>
 class Schedule {
 	private:
