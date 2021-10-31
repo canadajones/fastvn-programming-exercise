@@ -81,11 +81,12 @@ class TextBox {
 
 	// Changes with resolution when resizing window
 	std::shared_ptr<SDL_Surface> box;
-	std::shared_ptr<SDL_Surface> displayBox;
-	
 	std::shared_ptr<SDL_Renderer> renderer;
 	std::shared_ptr<SDL_Texture> accelBox;
-	std::shared_ptr<SDL_Texture> accelDisplayBox;
+	
+	
+
+	SDL_Rect displayRect;
 
 	// May change at an arbitrary time
 	DialogueFont font;
@@ -93,6 +94,9 @@ class TextBox {
 	
 	// Regenerated every time the frame is changed
 	std::shared_ptr<SDL_Surface> textSurface;
+
+	
+	std::shared_ptr<SDL_Texture> accelText;
 
 	int lines;
 	public:
@@ -105,12 +109,12 @@ class TextBox {
 	 */
 	TextBox(AbsoluteDimensions surfDimensions, std::string font, TextBoxCreator boxGenerator, SDL_Renderer* renderer) :
 		
-		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface}, displayBox{makeNewSurface(box->w - 48, box->h - 48), SDL_FreeSurface},
-		renderer{renderer, SDL_DestroyRenderer}, accelBox{SDL_CreateTextureFromSurface(renderer, box.get()), SDL_DestroyTexture},
-		accelDisplayBox{SDL_CreateTextureFromSurface(renderer, displayBox.get()), SDL_DestroyTexture},
-		font{font, getPtSize(surfDimensions)}, fontName{font}, textSurface{nullptr}, lines{0} {
-			SDL_SetSurfaceBlendMode(displayBox.get(), SDL_BLENDMODE_ADD);
-		};
+		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface},
+		renderer{renderer, SDL_DestroyRenderer},
+		accelBox{SDL_CreateTextureFromSurface(renderer, box.get()), SDL_DestroyTexture},
+		displayRect{.x = 0, .y = 0, .w = box->w - 48, .h = box->h - 48},
+		font{font, getPtSize(surfDimensions)}, fontName{font}, textSurface{nullptr},
+		accelText{nullptr}, lines{0} {};
 
 
 	const PositionMapping& getPosMap() const {
@@ -127,9 +131,13 @@ class TextBox {
 	SDL_Texture* getBoxAccel() const {
 		return accelBox.get();
 	};
+
+	const SDL_Rect* getRect() const {
+		return &displayRect;
+	}
 	
 	SDL_Texture* getTextAccel() const {
-		return accelDisplayBox.get();
+		return accelText.get();
 	}
 
 	SDL_Surface* generateDisplayText(std::string text) {
@@ -148,10 +156,12 @@ class TextBox {
 
 	AbsoluteDimensions updateResolution(AbsoluteDimensions surfDimensions, TextBoxCreator boxGenerator) {
 		box.reset(boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface);
-		displayBox.reset(makeNewSurface(box->w - 48 , box->h - 48 ), SDL_FreeSurface);
+		displayRect.w = box->w - 48;
+		displayRect.h = box->h - 48;
+		
 		
 		accelBox.reset(SDL_CreateTextureFromSurface(renderer.get(), box.get()), SDL_DestroyTexture);
-		accelDisplayBox.reset(SDL_CreateTextureFromSurface(renderer.get(), displayBox.get()), SDL_DestroyTexture);
+		accelText.reset(SDL_CreateTextureFromSurface(renderer.get(), textSurface.get()), SDL_DestroyTexture);
 
 		font = {fontName, getPtSize(surfDimensions)};
 		return {static_cast<uint>(box->w), static_cast<uint>(box->h)};
@@ -159,19 +169,13 @@ class TextBox {
 
 	void updateTextPosition() {
 		int ptSize = getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
-		SDL_Rect rect {
+		displayRect = {
 			.x = 0,
 			.y = lines * 2 * ptSize,
-			.w = 0,
-			.h = 0
+			.w = box->w - 48,
+			.h = box->h - 48
 		};
-		int w, h;
-		w = 0;
-		h = 0;
-		SDL_FillRect(displayBox.get(), nullptr, SDL_MapRGBA(displayBox->format, 0, 0, 0, 0));
-		SDL_BlitSurface(textSurface.get(), nullptr, displayBox.get(), &rect);
-		accelDisplayBox.reset(SDL_CreateTextureFromSurface(renderer.get(), textSurface.get()), SDL_DestroyTexture);
-		SDL_QueryTexture(accelDisplayBox.get(), nullptr, nullptr, &w, &h);
+		accelText.reset(SDL_CreateTextureFromSurface(renderer.get(), textSurface.get()), SDL_DestroyTexture);
 	};
 
 	void scrollDown() {
@@ -188,7 +192,7 @@ class TextBox {
 		// We check for this by seeing if the remainder of the text surface height post-scrolling is lesser than the display box height
 		int pixelsMoved = lines * 2 * getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
 		
-		if (textSurface->h > displayBox->h && textSurface->h + pixelsMoved > displayBox->h) {
+		if (textSurface->h > displayRect.h && displayRect.y + pixelsMoved > displayRect.h) {
 			lines--;
 			updateTextPosition();
 		}

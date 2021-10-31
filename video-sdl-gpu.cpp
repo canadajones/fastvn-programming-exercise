@@ -280,12 +280,12 @@ void renderTextAccel(SDL_Renderer* renderer, TextBox& textBox, std::string text)
 		.x = xy.x + 20,
 		.y = xy.y + 20,
 		.w = textBox.getText()->w,
-		.h = textBox.getText()->h,
+		.h = textBox.getText()->h
 	};
 
 	//SDL_BlitSurface(textBox.getText(), nullptr, screenSurface, &pos);
 	
-	SDL_RenderCopy(renderer, textBox.getTextAccel(), nullptr, &pos);
+	SDL_RenderCopy(renderer, textBox.getTextAccel(), textBox.getRect(), &pos);
 };
 
 void renderFrameAccel(gpu::SDLManager& SDLInfo, Frame& curFrame, TexContainer& texCon, TextBox textBox) {
