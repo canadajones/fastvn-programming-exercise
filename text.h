@@ -16,13 +16,14 @@
 
 #include <SDL2/SDL_ttf.h>
 
+#include "video-sdl-common.h"
+
 #include "structures.h"
 #include "image.h"
 
 
 namespace vnpge {
-SDL_Surface* makeNewSurface(uint w, uint h);
-SDL_Surface* makeTextBox(AbsoluteDimensions pixelDimensions, RelativeDimensions relDimensions);
+
 class DialogueFont {
 	private:
 		std::shared_ptr<TTF_Font> font;
