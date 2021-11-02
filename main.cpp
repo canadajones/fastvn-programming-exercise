@@ -64,8 +64,8 @@ int main() {
 	renderFrameAccel(SDLInfo, *curFrame, texCon, chapter.textBox);
 	
 	while (true) {
-		for (auto events = handleEvents(); events.isValid(); events.next()) {
-			auto ev = events.get();
+		auto events = handleEvents();
+		for (auto& ev : events) {
 			switch (ev.getAction()) {
 				
 				case Action::clean_exit: {
@@ -75,15 +75,12 @@ int main() {
 
 				case Action::next_page: {
 					chapter.nextFrame();
-					texCon.bg.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->bg.getSurface()), SDL_DestroyTexture);
-					texCon.character.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->storyCharacter.expressions.at(curFrame->expression).getSurface()), SDL_DestroyTexture);
+					
 				}
 				break;
 
 				case Action::prev_page: {
 					chapter.prevFrame();
-					texCon.bg.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->bg.getSurface()), SDL_DestroyTexture);
-					texCon.character.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->storyCharacter.expressions.at(curFrame->expression).getSurface()), SDL_DestroyTexture);
 				}
 				break;
 
@@ -113,7 +110,8 @@ int main() {
 			if (curFrame == chapter.storyFrames.end()) {
 				return 0;
 			}
-			
+			texCon.bg.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->bg.getSurface()), SDL_DestroyTexture);
+					texCon.character.reset(SDL_CreateTextureFromSurface(SDLInfo.getRenderer(), curFrame->storyCharacter.expressions.at(curFrame->expression).getSurface()), SDL_DestroyTexture);
 			
 			// Only render the frame if there is anything to do.
 			// All current events cause a screen change, so reaching this point means it has to be run.

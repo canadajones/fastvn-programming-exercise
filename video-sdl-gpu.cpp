@@ -52,6 +52,7 @@ AbsolutePosition getPixelPosfromPosition(AbsoluteDimensions& srcDim, AbsoluteDim
 };
 
 
+
 /**
  * @brief Construct a new gpu::SDLManager
  * 
@@ -238,7 +239,7 @@ void renderTextAccel(SDL_Renderer* renderer, TextBox& textBox, std::string text)
 		.x = xy.x + 20,
 		.y = xy.y + 20,
 		.w = textBox.getText()->w,
-		.h = textBox.getText()->h
+		.h = (textBox.getText()->h > (textBox.getBox()->h - 48)) ? (textBox.getBox()->h - 48) : (textBox.getText()->h)
 	};
 
 	//SDL_BlitSurface(textBox.getText(), nullptr, screenSurface, &pos);

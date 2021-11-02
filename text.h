@@ -82,6 +82,7 @@ class TextBox {
 
 	// Changes with resolution when resizing window
 	std::shared_ptr<SDL_Surface> box;
+
 	std::shared_ptr<SDL_Renderer> renderer;
 	std::shared_ptr<SDL_Texture> accelBox;
 	
@@ -193,7 +194,7 @@ class TextBox {
 		// We check for this by seeing if the remainder of the text surface height post-scrolling is lesser than the display box height
 		int pixelsMoved = lines * 2 * getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
 		
-		if (textSurface->h > displayRect.h && displayRect.y + pixelsMoved > displayRect.h) {
+		if (textSurface->h > (box->h - 48 )&& (displayRect.y + pixelsMoved) < (box->h - 48)) {
 			lines--;
 			updateTextPosition();
 		}
