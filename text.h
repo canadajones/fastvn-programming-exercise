@@ -173,7 +173,7 @@ class TextBox {
 		int ptSize = getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
 		displayRect = {
 			.x = 0,
-			.y = lines * 2 * ptSize,
+			.y = -lines * 2 * ptSize,
 			.w = box->w - 48,
 			.h = box->h - 48
 		};
@@ -193,7 +193,8 @@ class TextBox {
 		// Also disallow further scrolling if the bottom of the text has been reached.
 		// We check for this by seeing if the remainder of the text surface height post-scrolling is lesser than the display box height
 		int pixelsMoved = lines * 2 * getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
-		
+		std::cout << "pixelsMoved: " << pixelsMoved << std::endl;
+		std::cout << "displayRect:\n{ .x=" << displayRect.x << ",\n .y=" << displayRect.y << ",\n .w=" << displayRect.w << ",\n .h=" << displayRect.h << std::endl;
 		if (textSurface->h > (box->h - 48 )&& (displayRect.y + pixelsMoved) < (box->h - 48)) {
 			lines--;
 			updateTextPosition();
