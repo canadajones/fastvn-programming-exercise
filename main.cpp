@@ -85,12 +85,12 @@ int main() {
 				break;
 
 				case Action::scroll_up: {
-					chapter.textBox.scrollUp();
+					chapter.textBox.scrollTextUp();
 				}
 				break;
 
 				case Action::scroll_down: {
-					chapter.textBox.scrollDown();
+					chapter.textBox.scrollTextDown();
 				}
 				break;
 
