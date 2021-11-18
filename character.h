@@ -1,12 +1,11 @@
+#ifndef STORYCHARACTER_HEADER
+#define STORYCHARACTER_HEADER
 #include <string>
 #include <memory>
 #include <unordered_map>
 
-#include "image.h"
 
 
-#ifndef STORYCHARACTER_HEADER
-#define STORYCHARACTER_HEADER
 namespace vnpge {
 /**
  * @brief Template for creating Characters
@@ -42,10 +41,11 @@ struct MetaCharacter {
  * Contains everything needed to display a character.
  * NOTE: Requires a meta-character template to construct
  */
-struct Character {
+template<typename ImageClass>
+class Character {
 	public:
 		std::string name;
-		std::unordered_map<std::string, Image> expressions;
+		std::unordered_map<std::string, ImageClass> expressions;
 	public:
 	/**
 	 * @brief Construct a new Character.

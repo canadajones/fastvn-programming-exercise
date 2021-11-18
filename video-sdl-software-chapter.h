@@ -50,14 +50,15 @@ struct MetaFrame {
  * @brief A representation of an instant or moment in the story.
  * NOTE: Requires a meta-frame to construct.
  */
+template <typename ImageClass>
 struct Frame {
 	public:
 		std::string textDialogue;
-		Character& storyCharacter;
+		Character<ImageClass>& storyCharacter;
 		std::string expression;
 		PositionMapping position;
 
-		Image bg;
+		ImageClass bg;
 	public:
 	/**
 	 * @brief Construct a new Frame
@@ -66,17 +67,19 @@ struct Frame {
 	 * @param character A reference to the current Character.
 	 * @param img The image to use as a background.
 	 */
-		Frame(const MetaFrame& metaFrame, Character& character, Image& img) 
+		Frame(const MetaFrame& metaFrame, Character<ImageClass>& character, ImageClass& img) 
 		: textDialogue(metaFrame.textDialogue), storyCharacter(character), expression(metaFrame.expression), position(metaFrame.position), bg{img} {};
 
 		Frame() = delete;
 };
 
 // TODO: Write up a good summary of the Chapter organisatorial structure.
+// TODO: Make this independent of rendering backend (why does the abstract chapter structure need to know which class backs the images?)
+template <typename ImageClass>
 class Chapter {
 	private:
-	static const std::vector<Character> demetaCharacterVec(const std::vector<MetaCharacter>& metaCharacters) {
-		std::vector<Character> createdCharacters;
+	static const std::vector<Character<ImageClass>> demetaCharacterVec(const std::vector<MetaCharacter>& metaCharacters) {
+		std::vector<Character<ImageClass>> createdCharacters;
 		createdCharacters.reserve(metaCharacters.size());
 		
 		for (auto& metaChar : metaCharacters) {
@@ -87,23 +90,23 @@ class Chapter {
 	}
 	public:
 		std::string chapterName;
-		std::vector<Character> storyCharacters;
-		std::vector<Frame> storyFrames;
-		std::vector<Image> backgrounds;
+		std::vector<Character<ImageClass>> storyCharacters;
+		std::vector<Frame<ImageClass>> storyFrames;
+		std::vector<ImageClass> backgrounds;
 
 		TextBox textBox;
-		std::vector<Frame>::iterator curFrame;
+		typename std::vector<Frame<ImageClass>>::iterator curFrame;
 	public:
 		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames,
 		AbsoluteDimensions pixelDimensions, std::string font, SDL_Renderer* renderer, TextBoxCreator boxGenerator = makeTextBox) 
 		: chapterName{name}, storyCharacters{demetaCharacterVec(metaCharacters)}, textBox{pixelDimensions, font, boxGenerator, renderer} {
 			storyFrames.reserve(metaFrames.size());
 			
-			std::unordered_map<std::string, Character&> charIDToRefMap;
-			std::unordered_map<std::string, Image&> bgPathtoImageMap;
+			std::unordered_map<std::string, Character<ImageClass>&> charIDToRefMap;
+			std::unordered_map<std::string, ImageClass&> bgPathtoImageMap;
 			
 			{
-				std::vector<Character>::iterator it1 = storyCharacters.begin();
+				typename std::vector<Character<ImageClass>>::iterator it1 = storyCharacters.begin();
 				for (auto& metaChar : metaCharacters) {
 					charIDToRefMap.insert({metaChar.id, *it1.base()});
 					it1 = std::next(it1);
@@ -132,7 +135,7 @@ class Chapter {
 		};
 
 	
-	std::vector<Frame>::iterator nextFrame() {
+	typename std::vector<Frame<ImageClass>>::iterator nextFrame() {
 		if (curFrame != storyFrames.end()) {
 			curFrame = std::next(curFrame);
 		}
@@ -144,7 +147,7 @@ class Chapter {
 		return curFrame;
 	}
 
-	std::vector<Frame>::iterator prevFrame() {
+	typename std::vector<Frame<ImageClass>>::iterator prevFrame() {
 		if (curFrame != storyFrames.begin()) {
 			curFrame = std::prev(curFrame);
 			textBox.generateDisplayText(curFrame->textDialogue);
