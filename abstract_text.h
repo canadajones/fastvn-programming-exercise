@@ -16,6 +16,7 @@
 
 #include <SDL2/SDL_ttf.h>
 
+#include "text.h"
 #include "video-sdl-common.h"
 
 #include "structures.h"
@@ -24,54 +25,9 @@
 
 namespace vnpge {
 
-class DialogueFont {
-	private:
-		std::shared_ptr<TTF_Font> font;
-
-	public:
-		DialogueFont(std::string name, uint ptsize) : font{TTF_OpenFontIndex(name.c_str(), ptsize, 0), TTF_CloseFont} {
-		}
-		const TTF_Font* getFont() const {
-			return font.get();
-		}
-		TTF_Font* getFont() {
-			return font.get();
-		}
-};
-
-using TextBoxCreator = std::function<SDL_Surface* (AbsoluteDimensions, RelativeDimensions)>;
-
 
 class TextBox {
 	private:
-	static uint getPtSize(AbsoluteDimensions boxDims) {
-		double boxHeight = static_cast<double>(boxDims.h) * 0.25;
-		uint ptSize;
-		uint numLines = 5;
-
-		// TODO: Evaluate pixel values based on DPI
-
-		while (boxHeight > 40) {
-			ptSize = boxHeight/numLines;
-			if (ptSize > 60) {
-				numLines += 1;
-				continue;
-			}
-			if (ptSize < 15) {
-				numLines -= 1;
-				continue;
-			}
-
-			if (boxHeight/(numLines + 1) < 35) {
-				break;
-			}
-			else {
-				numLines += 1;
-			}
-		}
-		numLines += static_cast<uint>(boxDims.h / boxDims.w);
-		return static_cast<uint>(std::round(static_cast<double>(boxHeight)/static_cast<double>(numLines)));
-	}
 
 	// Shouldn't really change, except for drastic changes in resolution (akin to changing devices)
 	PositionMapping posMap = {
@@ -79,30 +35,15 @@ class TextBox {
 		.destPos = {0, 0.75}
 	};
 	
-	// Dimensions relative to "screen" dimensions (it's really the surface dimensions, but realistically it's going to be the screen surface)
+	// Dimensions relative to "screen" dimensions 
 	RelativeDimensions relDimensions = {.w = 1.0, .h = 0.25};
 
-	// Changes with resolution when resizing window
-	std::shared_ptr<SDL_Surface> box;
-
-	std::shared_ptr<SDL_Renderer> renderer;
-	std::shared_ptr<SDL_Texture> accelBox;
-	
-	
-
-	SDL_Rect displayRect;
-
 	// May change at an arbitrary time
-	DialogueFont font;
 	std::string fontName;
 	
 	// Regenerated every time the frame is changed
-	std::shared_ptr<SDL_Surface> textSurface;
+	int linesScrolled;
 
-	
-	std::shared_ptr<SDL_Texture> accelText;
-
-	int lines;
 	public:
 	/**
 	 * @brief Construct a new TextBox.
@@ -112,13 +53,7 @@ class TextBox {
 	 * @param boxGenerator A function accepting the absolute dimensions of the destination surface, as well as the relative dimensions this box occupies thereon.
 	 */
 	TextBox(AbsoluteDimensions surfDimensions, std::string font, TextBoxCreator boxGenerator, SDL_Renderer* renderer) :
-		
-		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface},
-		renderer{renderer, SDL_DestroyRenderer},
-		accelBox{SDL_CreateTextureFromSurface(renderer, box.get()), SDL_DestroyTexture},
-		displayRect{.x = 0, .y = 0, .w = box->w - 48, .h = box->h - 48},
-		font{font, getPtSize(surfDimensions)}, fontName{font}, textSurface{nullptr},
-		accelText{nullptr}, lines{0} {};
+		fontName{font}, linesScrolled{0} {};
 
 
 	const PositionMapping& getPosMap() const {
@@ -152,7 +87,7 @@ class TextBox {
 		//SDL_SetSurfaceBlendMode(textSurface.get(), SDL_BLENDMODE_NONE);
 		
 		// Reset text position upon text change
-		lines = 0;
+		linesScrolled = 0;
 		updateTextPosition();
 
 		return textSurface.get();
@@ -190,8 +125,8 @@ class TextBox {
 		std::cout << "pixelsMoved: " << pixelsMoved << std::endl;
 		std::cout << "displayRect:\n{ .x=" << displayRect.x << ",\n .y=" << displayRect.y << ",\n .w=" << displayRect.w << ",\n .h=" << displayRect.h << std::endl;
 
-		if (lines > 0) {
-			lines--;
+		if (linesScrolled > 0) {
+			linesScrolled--;
 			updateTextPosition();
 		}
 	}
@@ -205,7 +140,7 @@ class TextBox {
 		std::cout << "displayRect:\n{ .x=" << displayRect.x << ",\n .y=" << displayRect.y << ",\n .w=" << displayRect.w << ",\n .h=" << displayRect.h << std::endl;
 		
 		if (textSurface->h > (box->h - 48 ) && (displayRect.y + pixelsMoved) < (box->h - 48)) {
-			lines++;
+			linesScrolled++;
 			updateTextPosition();
 		}
 	}
