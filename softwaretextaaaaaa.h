@@ -22,18 +22,17 @@
 #include "abstract_text.h"
 
 
+
 namespace vnpge {
 
+template <typename T>
+using TextBoxCreator = std::function<T (AbsoluteDimensions, RelativeDimensions)>;
 class DialogueFont {
 	private:
 		std::shared_ptr<TTF_Font> font;
 
 	public:
 		DialogueFont(std::string name, uint ptsize) : font{TTF_OpenFontIndex(name.c_str(), ptsize, 0), TTF_CloseFont} {
-			if (font == nullptr) {
-				std::string err = "Font could not be loaded: ";
-				throw std::runtime_error(err.append(TTF_GetError()));
-			}
 		}
 		const TTF_Font* getFont() const {
 			return font.get();
@@ -43,8 +42,8 @@ class DialogueFont {
 		}
 };
 
-template <typename T>
-using TextBoxCreator = std::function<T (AbsoluteDimensions, RelativeDimensions)>;
+
+
 
 class TextBox {
 	private:
@@ -77,19 +76,17 @@ class TextBox {
 		return static_cast<uint>(std::round(static_cast<double>(boxHeight)/static_cast<double>(numLines)));
 	}
 
-	TextBoxCreator<SDL_Surface*> boxGenerator;
-
 	// Changes with resolution when resizing window
-	std::shared_ptr<SDL_Surface> box;
+	std::shared_ptr<SDL_Renderer> renderer;
+	std::shared_ptr<SDL_Texture> accelBox;
 	
-
 	SDL_Rect displayRect;
 
 	// May change at an arbitrary time
-	DialogueFont dialogueFont;
-	
+	DialogueFont font;
+
 	// Regenerated every time the frame is changed
-	std::shared_ptr<SDL_Surface> textSurface;
+	std::shared_ptr<SDL_Texture> accelText;
 
 	public:
 	/**
@@ -99,13 +96,18 @@ class TextBox {
 	 * @param font The font to use, in form of a DialogueFont.
 	 * @param boxGenerator A function accepting the absolute dimensions of the destination surface, as well as the relative dimensions this box occupies thereon.
 	 */
-	TextBox(AbsoluteDimensions surfDimensions, TextBoxCreator<SDL_Surface*> boxGenerator) :
+	TextBox(SDL_Renderer* renderer, AbsoluteDimensions surfDimensions, TextBoxCreator<SDL_Surface*> boxGenerator) :
 		
-		boxGenerator{boxGenerator},
-		box{boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface},
+		renderer{renderer, SDL_DestroyRenderer},
+		accelBox{SDL_CreateTextureFromSurface(renderer, box.get()), SDL_DestroyTexture},
 		displayRect{.x = 0, .y = 0, .w = box->w - 48, .h = box->h - 48},
-		textSurface{nullptr}, {};
+		font{font, getPtSize(surfDimensions)}, fontName{font}, textSurface{nullptr},
+		accelText{nullptr}, lines{0} {};
 
+
+	const PositionMapping& getPosMap() const {
+		return posMap;
+	}
 	SDL_Surface* getBox() const {
 		return box.get();
 	};
@@ -114,39 +116,46 @@ class TextBox {
 		return textSurface.get();
 	}
 
+	SDL_Texture* getBoxAccel() const {
+		return accelBox.get();
+	};
+
 	const SDL_Rect* getRect() const {
 		return &displayRect;
 	}
 	
+	SDL_Texture* getTextAccel() const {
+		return accelText.get();
+	}
 
 	SDL_Surface* generateDisplayText(std::string text) {
 
 		// TODO: make per-character text colouring a thing
 		SDL_Color color = {255, 255, 255, 255};
-		textSurface.reset(TTF_RenderUTF8_Blended_Wrapped(dialogueFont.getFont(), text.c_str(), color, box->w - 48), SDL_FreeSurface);
+		textSurface.reset(TTF_RenderUTF8_Blended_Wrapped(font.getFont(), text.c_str(), color, box->w - 48), SDL_FreeSurface);
 		//SDL_SetSurfaceBlendMode(textSurface.get(), SDL_BLENDMODE_NONE);
 		
 		// Reset text position upon text change
-		updateTextPosition(0);
+		lines = 0;
+		updateTextPosition();
 
 		return textSurface.get();
 	};
 
-	AbsoluteDimensions updateResolution(AbsoluteDimensions newDimensions, RelativeDimensions position, DialogueFont& font) {
-		// Generate new text box background
-		box.reset(boxGenerator(newDimensions, position), SDL_FreeSurface);
-		
-		// Update text display rect area
+	AbsoluteDimensions updateResolution(AbsoluteDimensions surfDimensions, TextBoxCreator boxGenerator) {
+		box.reset(boxGenerator(surfDimensions, relDimensions), SDL_FreeSurface);
 		displayRect.w = box->w - 48;
 		displayRect.h = box->h - 48;
 		
-		// Update font size
-		dialogueFont = font;
 		
+		accelBox.reset(SDL_CreateTextureFromSurface(renderer.get(), box.get()), SDL_DestroyTexture);
+		accelText.reset(SDL_CreateTextureFromSurface(renderer.get(), textSurface.get()), SDL_DestroyTexture);
+
+		font = {fontName, getPtSize(surfDimensions)};
 		return {static_cast<uint>(box->w), static_cast<uint>(box->h)};
 	};
 
-	void updateTextPosition(int lines) {
+	void updateTextPosition() {
 		int ptSize = getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
 		displayRect = {
 			.x = 0,
@@ -154,24 +163,37 @@ class TextBox {
 			.w = box->w - 48,
 			.h = box->h - 48
 		};
-		
+		accelText.reset(SDL_CreateTextureFromSurface(renderer.get(), textSurface.get()), SDL_DestroyTexture);
 	};
-};
 
-class TextBoxDisplayable {
-	private:
-	TextBoxInfo textBoxInfo;
-	DialogueFont font;
-	TextBox renderingTextBox;
-	public:
+	void scrollTextDown() {
+		// This only fires if lines has been decremented already
+		// It is thus redundant to check if scrollability is of concern.
 
-	void updateResolution() {
+		int pixelsMoved =  -(lines - 1) * 2 * getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
+		std::cout << "pixelsMoved: " << pixelsMoved << std::endl;
+		std::cout << "displayRect:\n{ .x=" << displayRect.x << ",\n .y=" << displayRect.y << ",\n .w=" << displayRect.w << ",\n .h=" << displayRect.h << std::endl;
 
+		if (lines > 0) {
+			lines--;
+			updateTextPosition();
+		}
 	}
-
-
+	void scrollTextUp() {
+		// Only allow scrolling if the current text does not fit on screen
+		// Also disallow further scrolling if the bottom of the text has been reached.
+		// We check for this by seeing if the remainder of the text surface height post-scrolling is lesser than the display box height
+		
+		int pixelsMoved = (lines + 1) * 2 * getPtSize({.w = static_cast<uint>(box->w), .h = static_cast<uint>(box->h)});
+		std::cout << "pixelsMoved: " << pixelsMoved << std::endl;
+		std::cout << "displayRect:\n{ .x=" << displayRect.x << ",\n .y=" << displayRect.y << ",\n .w=" << displayRect.w << ",\n .h=" << displayRect.h << std::endl;
+		
+		if (textSurface->h > (box->h - 48 ) && (displayRect.y + pixelsMoved) < (box->h - 48)) {
+			lines++;
+			updateTextPosition();
+		}
+	}
 };
 };
 
-// Make a Dialogue class?
 #endif

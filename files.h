@@ -5,7 +5,13 @@
 #include <fstream>
 #include <sstream>
 
-// NOLINTNEXTLINE
+
+/**
+ * @brief Load a file into a string
+ * 
+ * @param path Path to file
+ * @return Contents of file in a std::string
+ */
 std::string loadFileToString(std::string path) {
 	// Open the file for reading
 	std::ifstream file;
