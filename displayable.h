@@ -3,11 +3,7 @@
 #include <type_traits>
 #include <concepts>
 
-#include "imagebase.h"
-
 namespace vnpge {
-
-
 
 
 template<typename Renderable, typename RendererState> 
