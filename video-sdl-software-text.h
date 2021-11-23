@@ -67,6 +67,15 @@ class TextBoxInfo {
 
 // FONTS!!!!
 
+class DialogueFont {
+	private:
+	std::string name;
+	std::shared_ptr<TTF_Font> font;
+	public:	
+
+	DialogueFont(std::string path) : name{path}, font{TTF_OpenFont(path.c_str(), 20)} {};
+};
+
 /**
  * @brief Stateful renderer for textboxes
  * 
