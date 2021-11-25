@@ -2,6 +2,7 @@
 #define TEXTBOX_HEADER
 
 #include <SDL2/SDL_render.h>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <functional>
@@ -73,7 +74,12 @@ class DialogueFont {
 	std::shared_ptr<TTF_Font> font;
 	public:	
 
+	// TODO: put in getPtSize here from the other file
 	DialogueFont(std::string path) : name{path}, font{TTF_OpenFont(path.c_str(), 20)} {};
+
+	TTF_Font* getFont() {
+		return font.get();
+	}
 };
 
 /**
@@ -95,8 +101,24 @@ class TextRenderer {
 	public:
 
 	TextRenderer() {};
-	SDL_Surface* renderStoryFrame(Dialogue dialogue) {
-		return nullptr;
+
+	
+	SDL_Surface* renderStoryFrame(Dialogue dialogue, DialogueFont font) {
+
+		// Grab dialogue colour
+		SDL_Color fgcolour = {
+			.r = static_cast<uint8_t>(dialogue.getColour().red),
+			.g = static_cast<uint8_t>(dialogue.getColour().green),
+			.b = static_cast<uint8_t>(dialogue.getColour().blue),
+			.a = 255
+		};
+
+		// Temporary storage for the complete text
+		SDL_Surface* renderedText = TTF_RenderUTF8_Blended_Wrapped(font.getFont(), dialogue.getText().c_str(), fgcolour, textArea.w);
+		
+		text.reset(renderedText, SDL_FreeSurface);
+
+		return text.get();
 	};
 
 	void updateResolution(AbsoluteDimensions resolution, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator) {
@@ -107,8 +129,7 @@ class TextRenderer {
 		background.reset(textBGSurface.first, SDL_FreeSurface);
 
 		textArea = textBGSurface.second.area;
-
-
+		textPosition = textBGSurface.second.position;
 	};
 };
 
