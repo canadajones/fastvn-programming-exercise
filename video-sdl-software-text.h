@@ -26,14 +26,44 @@
 namespace vnpge {
 namespace sw {
 
+// FONTS!!!!
+
+class DialogueFont {
+	private:
+	std::string name;
+	
+	public:	
+
+	// TODO: put in getPtSize here from the other file
+	DialogueFont(std::string path) : name{path} {};
+
+	std::string getName() {
+		return name;
+	}
+};
+
+class DialogueFontSW : DialogueFont {
+	private:
+	std::shared_ptr<TTF_Font> font;
+	
+	public:
+	DialogueFontSW(DialogueFont& font) : DialogueFont(font), font{TTF_OpenFont(font.getName().c_str(), 20), SDL_FreeSurface} {};
+
+	TTF_Font* getFont() {
+		return font.get();
+	}
+};
+
 class Dialogue {
 	private:
 	std::string name;
 	std::string text;
 	Colour colour;
-	public:
+	DialogueFont font;
 
-	Dialogue(std::string name, std::string text, Colour colour) : name{name}, text{text}, colour{colour} {};
+	public:
+	Dialogue(std::string name, std::string text, Colour colour, DialogueFont& font) :
+		name{name}, text{text}, colour{colour}, font{font} {};
 
 	std::string getName() const {
 		return name;
@@ -66,21 +96,11 @@ class TextBoxInfo {
 	};
 };
 
-// FONTS!!!!
+DialogueFontSW lookupFont(DialogueFont font) {
+	// TODO: Make this look the font up in a hashmap 
+	return {font};
+}
 
-class DialogueFont {
-	private:
-	std::string name;
-	std::shared_ptr<TTF_Font> font;
-	public:	
-
-	// TODO: put in getPtSize here from the other file
-	DialogueFont(std::string path) : name{path}, font{TTF_OpenFont(path.c_str(), 20)} {};
-
-	TTF_Font* getFont() {
-		return font.get();
-	}
-};
 
 /**
  * @brief Stateful renderer for textboxes
@@ -88,6 +108,9 @@ class DialogueFont {
  */
 class TextRenderer {
 	private:
+		// The destination surface
+		SDL_Surface* dest;
+		
 		std::shared_ptr<SDL_Surface> background;
 		std::shared_ptr<SDL_Surface> text;
 
@@ -97,10 +120,11 @@ class TextRenderer {
 
 		AbsoluteDimensions textArea;
 		AbsolutePosition textPosition; // origin is at upper left of background
-
 	public:
 
-	TextRenderer() {};
+	TextRenderer(SDL_Surface* dest, Dialogue dialogue) : dest{dest} {
+		
+	};
 
 	
 	SDL_Surface* renderStoryFrame(Dialogue dialogue, DialogueFont font) {
@@ -113,8 +137,11 @@ class TextRenderer {
 			.a = 255
 		};
 
+		// Look up font in font table
+		DialogueFontSW f = lookupFont(font);
+
 		// Temporary storage for the complete text
-		SDL_Surface* renderedText = TTF_RenderUTF8_Blended_Wrapped(font.getFont(), dialogue.getText().c_str(), fgcolour, textArea.w);
+		SDL_Surface* renderedText = TTF_RenderUTF8_Blended_Wrapped(f.getFont(), dialogue.getText().c_str(), fgcolour, textArea.w);
 		
 		text.reset(renderedText, SDL_FreeSurface);
 
@@ -131,6 +158,11 @@ class TextRenderer {
 		textArea = textBGSurface.second.area;
 		textPosition = textBGSurface.second.position;
 	};
+
+	void displayText() {
+
+		SDL_BlitSurface(dest);
+	}
 };
 
 };
