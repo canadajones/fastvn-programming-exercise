@@ -1,9 +1,28 @@
+module;
+
+#include "structures.h"
 #include <string>
 #include <functional>
 
-#include "structures.h"
+export module StoryDialogue;
 
-namespace vnpge {
+
+export namespace vnpge {
+
+class DialogueFont {
+	private:
+	std::string name;
+	
+	public:	
+
+	// TODO: put in getPtSize here from the other file
+	DialogueFont(std::string path) : name{path} {};
+
+	std::string getName() {
+		return name;
+	}
+};
+
 class Dialogue {
 	private:
 	std::string name;
@@ -26,7 +45,8 @@ class Dialogue {
 	}
 };
 
-template<typename T>
-using TextBGCreator = std::function<T (AbsoluteDimensions, RelativeDimensions)>;
+//														  Usable text area	   Screen size	   Text box area relative to screen size
+template<typename Renderable>
+using TextBGCreator = std::function<std::pair<Renderable, PositionedArea> (AbsoluteDimensions, RelativeDimensions)>;
 
 };

@@ -22,6 +22,8 @@ module;
 
 export module SoftwareText;
 
+import StoryDialogue;
+
 namespace vnpge {
 namespace sw {
 
@@ -197,7 +199,28 @@ class TextRenderer {
 		
 		// Put text on screen (less easy!)
 		SDL_BlitSurface(text.get(), &srcPos, dest, &destPos);
+	};
+
+	/**
+	 * @brief Scroll text up by a line. If scrolling would reveal no new text, do nothing.
+	 * 
+	 */
+	void scrollTextUp() {
+		
+		if (static_cast<int>(textArea.h) < text->h && scrolledLines * lineHeight <= text->h) {
+			scrolledLines++;
+		}
+	};
+	/**
+	 * @brief Scroll text down by a line. If scrolling would reveal no new text, do nothing.
+	 * 
+	 */
+	void scrollTextDown() {
+		if (scrolledLines > 0) {
+			scrolledLines--;
+		}
 	}
+
 };
 
 };
