@@ -1,6 +1,4 @@
-#ifndef TEXTBOX_HEADER
-#define TEXTBOX_HEADER
-
+module;
 #include <SDL2/SDL_render.h>
 #include <limits>
 #include <memory>
@@ -22,6 +20,7 @@
 #include "structures.h"
 #include "abstract_text.h"
 
+export module SoftwareText;
 
 namespace vnpge {
 namespace sw {
@@ -42,12 +41,12 @@ class DialogueFont {
 	}
 };
 
-class DialogueFontSW : DialogueFont {
+class SWFont : DialogueFont {
 	private:
 	std::shared_ptr<TTF_Font> font;
 	
 	public:
-	DialogueFontSW(DialogueFont& font) : DialogueFont(font), font{TTF_OpenFont(font.getName().c_str(), 20), SDL_FreeSurface} {};
+	SWFont(DialogueFont& font) : DialogueFont(font), font{TTF_OpenFont(font.getName().c_str(), 20), TTF_CloseFont} {};
 
 	TTF_Font* getFont() {
 		return font.get();
@@ -86,17 +85,22 @@ using TextBGCreator = std::function<std::pair<Renderable, PositionedArea> (Absol
 
 class TextBoxInfo {
 	private:
+	AbsoluteDimensions resolution;
 	RelativeDimensions relativeArea;
 
 	public:
-	TextBoxInfo(RelativeDimensions area) : relativeArea{area} {};
+	TextBoxInfo(AbsoluteDimensions resolution, RelativeDimensions area) : resolution{resolution}, relativeArea{area} {};
+
+	AbsoluteDimensions getResolution() {
+		return resolution;
+	};
 
 	RelativeDimensions getArea() {
 		return relativeArea;
 	};
 };
 
-DialogueFontSW lookupFont(DialogueFont font) {
+SWFont lookupFont(DialogueFont font) {
 	// TODO: Make this look the font up in a hashmap 
 	return {font};
 }
@@ -108,22 +112,25 @@ DialogueFontSW lookupFont(DialogueFont font) {
  */
 class TextRenderer {
 	private:
-		// The destination surface
-		SDL_Surface* dest;
-		
-		std::shared_ptr<SDL_Surface> background;
-		std::shared_ptr<SDL_Surface> text;
+	// The destination surface
+	SDL_Surface* dest;
+	
+	std::shared_ptr<SDL_Surface> background;
+	std::shared_ptr<SDL_Surface> text;
 
-		int scrolledLines;
+	int scrolledLines;
+	int lineHeight;
 
-		// Generated values, don't touch
+	// Generated values, don't touch
 
-		AbsoluteDimensions textArea;
-		AbsolutePosition textPosition; // origin is at upper left of background
+	AbsoluteDimensions textArea;
+	AbsolutePosition textPosition; // origin is at upper left of background
+	
 	public:
-
-	TextRenderer(SDL_Surface* dest, Dialogue dialogue) : dest{dest} {
-		
+	TextRenderer(SDL_Surface* dest, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator,
+				 Dialogue dialogue, DialogueFont font) : dest{dest} {
+		updateResolution(boxInfo, bgCreator);
+		renderStoryFrame(dialogue, font);
 	};
 
 	
@@ -138,20 +145,22 @@ class TextRenderer {
 		};
 
 		// Look up font in font table
-		DialogueFontSW f = lookupFont(font);
+		SWFont f = lookupFont(font);
 
 		// Temporary storage for the complete text
 		SDL_Surface* renderedText = TTF_RenderUTF8_Blended_Wrapped(f.getFont(), dialogue.getText().c_str(), fgcolour, textArea.w);
 		
 		text.reset(renderedText, SDL_FreeSurface);
 
+		lineHeight = TTF_FontLineSkip(f.getFont());
+
 		return text.get();
 	};
 
-	void updateResolution(AbsoluteDimensions resolution, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator) {
+	void updateResolution(TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator) {
 		
 		// Generate a new text background, complete with information about position and area available to actual text
-		auto textBGSurface = bgCreator(resolution, boxInfo.getArea());
+		auto textBGSurface = bgCreator(boxInfo.getResolution(), boxInfo.getArea());
 
 		background.reset(textBGSurface.first, SDL_FreeSurface);
 
@@ -159,13 +168,37 @@ class TextRenderer {
 		textPosition = textBGSurface.second.position;
 	};
 
-	void displayText() {
+	void displayText(AbsolutePosition position) {
+		
+		SDL_Rect destPos = {
+			.x = position.x,
+			.y = position.y,
+		};
+		
+		// Put box on screen (easy!)
+		SDL_BlitSurface(background.get(), nullptr, dest, &destPos);
 
-		SDL_BlitSurface(dest);
+		// Offset box pos by text position within the box
+		destPos = {
+			.x = position.x + textPosition.x,
+			.y = position.y + textPosition.y
+		};
+
+		// Pick a rectangle representing the current scrolled level
+		// x is always 0
+		// y is text scroll
+		// w and h are given by the box generator function as the writable part of the box
+		SDL_Rect srcPos = {
+			.x = 0,
+			.y = scrolledLines * lineHeight,
+			.w = static_cast<int>(textArea.w),
+			.h = static_cast<int>(textArea.h)
+		};
+		
+		// Put text on screen (less easy!)
+		SDL_BlitSurface(text.get(), &srcPos, dest, &destPos);
 	}
 };
 
 };
 };
-
-#endif
