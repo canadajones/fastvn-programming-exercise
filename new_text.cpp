@@ -6,7 +6,6 @@ module;
 
 export module StoryDialogue;
 
-
 export namespace vnpge {
 
 class DialogueFont {
