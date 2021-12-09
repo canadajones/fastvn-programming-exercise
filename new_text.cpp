@@ -8,7 +8,7 @@ export module StoryDialogue;
 
 
 export namespace vnpge {
-
+	
 class DialogueFont {
 	private:
 	std::string name;

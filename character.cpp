@@ -1,12 +1,12 @@
-#ifndef STORYCHARACTER_HEADER
-#define STORYCHARACTER_HEADER
+module;
 #include <string>
 #include <memory>
 #include <unordered_map>
 
+export module StoryCharacter;
+import Image;
 
-
-namespace vnpge {
+export namespace vnpge {
 /**
  * @brief Template for creating Characters
  * Required to create Characters and MetaFrames, and by extension, Frames.
@@ -41,11 +41,10 @@ struct MetaCharacter {
  * Contains everything needed to display a character.
  * NOTE: Requires a meta-character template to construct
  */
-template<typename ImageClass>
 class Character {
 	public:
 		std::string name;
-		std::unordered_map<std::string, ImageClass> expressions;
+		std::unordered_map<std::string, Image> expressions;
 	public:
 	/**
 	 * @brief Construct a new Character.
@@ -60,4 +59,3 @@ class Character {
 		Character() = delete;
 };
 };
-#endif
