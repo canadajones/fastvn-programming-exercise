@@ -24,24 +24,10 @@ export module SoftwareText;
 
 import StoryDialogue;
 
+
 namespace vnpge {
 namespace sw {
 
-// FONTS!!!!
-
-class DialogueFont {
-	private:
-	std::string name;
-	
-	public:	
-
-	// TODO: put in getPtSize here from the other file
-	DialogueFont(std::string path) : name{path} {};
-
-	std::string getName() {
-		return name;
-	}
-};
 
 class SWFont : DialogueFont {
 	private:
@@ -54,32 +40,6 @@ class SWFont : DialogueFont {
 		return font.get();
 	}
 };
-
-class Dialogue {
-	private:
-	std::string name;
-	std::string text;
-	Colour colour;
-	DialogueFont font;
-
-	public:
-	Dialogue(std::string name, std::string text, Colour colour, DialogueFont& font) :
-		name{name}, text{text}, colour{colour}, font{font} {};
-
-	std::string getName() const {
-		return name;
-	}
-
-	std::string getText() const {
-		return text;
-	}
-
-	Colour getColour() const {
-		return colour;
-	}
-};
-
-
 
 //														  Usable text area	   Screen size	   Text box area relative to screen size
 template<typename Renderable>

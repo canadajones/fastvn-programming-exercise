@@ -1,3 +1,5 @@
+module;
+
 #include <memory>
 #include <vector>
 #include <string>
@@ -10,77 +12,115 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "video-sdl-common.h"
-#include "video-sdl-software.h"
+
 
 #include "structures.h"
-#include "chapter.h"
-#include "image.h"
-#include "text.h"
 #include "schedule.h"
 
+export module SoftwareRendering;
+import Chapter;
+import Image;
+import SoftwareText;
+
 namespace vnpge {
+	namespace sw {
+		class SDLManager {
+			private:
+			SDL_Window* window;
+			SDL_Surface* screenSurface;
+			Image screen;
+			
+			public:
+			SDLManager();
 
-sw::SDLManager::SDLManager() {
-	// Initialize SDL
-	if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) < 0) {
-		std::string err = "SDL could not initialize! SDL_Error: ";
-		throw std::runtime_error(err.append(SDL_GetError()));
-	} 	
+			SDLManager(const SDLManager&) = delete;
+			SDLManager operator=(const SDLManager&) = delete;
 
-	// Load support for the JPG and PNG image formats
-	int flags = IMG_INIT_JPG | IMG_INIT_PNG;
-	if (IMG_Init(flags) ^ flags) {
-		std::string err = "SDL_Image could not initialize! IMG_Error: ";
-		throw std::runtime_error(err.append(IMG_GetError()));
+			~SDLManager();
+
+			sw::SDLManager::SDLManager() {
+		// Initialize SDL
+		if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) < 0) {
+			std::string err = "SDL could not initialize! SDL_Error: ";
+			throw std::runtime_error(err.append(SDL_GetError()));
+		} 	
+
+		// Load support for the JPG and PNG image formats
+		int flags = IMG_INIT_JPG | IMG_INIT_PNG;
+		if (IMG_Init(flags) ^ flags) {
+			std::string err = "SDL_Image could not initialize! IMG_Error: ";
+			throw std::runtime_error(err.append(IMG_GetError()));
+		}
+
+		// Grab font rendering library
+		if (TTF_Init()) {
+			std::string err  = "TTF_Init: "; 
+			throw std::runtime_error(err.append(TTF_GetError()));
+		}
+
+
+		//Create window
+		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
+
+		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
+
+		if (window == nullptr) {
+			std::string err = "Window could not be created! SDL_Error: "; 
+			throw std::runtime_error(err.append(SDL_GetError()));
+		}
+
+		// Create Image container for the screen surface
+		screen = Image(screenSurface, true);
+
 	}
 
-	// Grab font rendering library
-	if (TTF_Init()) {
-		std::string err  = "TTF_Init: "; 
-		throw std::runtime_error(err.append(TTF_GetError()));
+	sw::SDLManager::~SDLManager() {
+		// Unload font support
+		TTF_Quit();
+
+		// Unload image format loading support
+		IMG_Quit();
+		
+		// Destroy window
+		SDL_DestroyWindow(window);
+		
+		// Quit SDL subsystems
+		SDL_Quit();
 	}
 
-
-	//Create window
-	window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
-
-	//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
-
-	if (window == nullptr) {
-		std::string err = "Window could not be created! SDL_Error: "; 
-		throw std::runtime_error(err.append(SDL_GetError()));
+	SDL_Surface* sw::SDLManager::getScreenSurface() {
+		return SDL_GetWindowSurface(window);
 	}
 
-	// Create Image container for the screen surface
-	screen = Image(screenSurface, true);
+	SDL_Window* sw::SDLManager::getWindow() {
+		return window;
+	}
 
+	Image sw::SDLManager::getScreenImage() {
+		return Image(SDL_GetWindowSurface(window), true);
+	}
+
+	};
+};
+
+/**
+ * @brief Blits an Image onto another at a specified position.
+ * 
+ * @param src Source image.
+ * @param dest Destination image.
+ * @param posMap Relative position mapping between source and destination. 
+ * @param scale_percentage Percentage points to scale the source by before blitting.
+ * @return The return status code of the underlying SDL_BlitScaled function. 
+ */
+int blitImageConstAspectRatio(Image& src, Image& dest, PositionMapping posMap, uint scale_percentage = 100);
+
+
+void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text);
+
+void renderFrame(sw::SDLManager& SDLInfo, Frame& curFrame, TextBox textBox);
 }
 
-sw::SDLManager::~SDLManager() {
-	// Unload font support
-	TTF_Quit();
 
-	// Unload image format loading support
-	IMG_Quit();
-	
-	// Destroy window
-	SDL_DestroyWindow(window);
-	
-	// Quit SDL subsystems
-	SDL_Quit();
-}
-
-SDL_Surface* sw::SDLManager::getScreenSurface() {
-	return SDL_GetWindowSurface(window);
-}
-
-SDL_Window* sw::SDLManager::getWindow() {
-	return window;
-}
-
-Image sw::SDLManager::getScreenImage() {
-	return Image(SDL_GetWindowSurface(window), true);
-}
 
 
 
