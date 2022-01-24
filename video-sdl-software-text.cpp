@@ -25,8 +25,7 @@ export module SoftwareText;
 import StoryDialogue;
 
 
-namespace vnpge {
-namespace sw {
+export namespace vnpge {
 
 
 class SWFont : DialogueFont {
@@ -41,9 +40,6 @@ class SWFont : DialogueFont {
 	}
 };
 
-//														  Usable text area	   Screen size	   Text box area relative to screen size
-template<typename Renderable>
-using TextBGCreator = std::function<std::pair<Renderable, PositionedArea> (AbsoluteDimensions, RelativeDimensions)>;
 
 class TextBoxInfo {
 	private:
@@ -94,7 +90,7 @@ class TextRenderer {
 		updateResolution(boxInfo, bgCreator);
 		renderStoryFrame(dialogue, font);
 	};
-
+	TextRenderer() = default;
 	
 	SDL_Surface* renderStoryFrame(Dialogue dialogue, DialogueFont font) {
 
@@ -180,8 +176,6 @@ class TextRenderer {
 			scrolledLines--;
 		}
 	}
-
 };
 
-};
 };

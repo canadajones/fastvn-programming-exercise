@@ -43,7 +43,10 @@ struct MetaCharacter {
  */
 class Character {
 	public:
+		std::string id;
+
 		std::string name;
+		
 		std::unordered_map<std::string, Image> expressions;
 	public:
 	/**
@@ -51,7 +54,7 @@ class Character {
 	 * 
 	 * @param metaCharacter The MetaCharacter template from which the name and expressions will be drawn
 	 */
-		Character(const MetaCharacter& metaCharacter) : name(metaCharacter.name) {
+		Character(const MetaCharacter& metaCharacter) : id{metaCharacter.id}, name{metaCharacter.name} {
 			for (auto& metaExpression : metaCharacter.metaExpressions) {
 				expressions.insert({metaExpression.first,{metaExpression.second}});
 			}

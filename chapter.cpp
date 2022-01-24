@@ -8,10 +8,11 @@ module;
 
 export module Chapter;
 
-import StoryCharacter;
 import Image;
+import StoryCharacter;
 
-namespace vnpge {
+
+export namespace vnpge {
 
 /**
  * @brief Template for creating Frames.

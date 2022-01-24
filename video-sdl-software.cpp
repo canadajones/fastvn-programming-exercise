@@ -17,28 +17,39 @@ module;
 #include "structures.h"
 #include "schedule.h"
 
+
 export module SoftwareRendering;
 import Chapter;
 import Image;
+import StoryDialogue;
 import SoftwareText;
 
 namespace vnpge {
-	namespace sw {
-		class SDLManager {
-			private:
-			SDL_Window* window;
-			SDL_Surface* screenSurface;
-			Image screen;
-			
-			public:
-			SDLManager();
 
-			SDLManager(const SDLManager&) = delete;
-			SDLManager operator=(const SDLManager&) = delete;
 
-			~SDLManager();
+class SoftwareImage : Image {
+	private:
+	std::shared_ptr<SDL_Surface> surf;
+	public:
+	SoftwareImage(Image& baseImage) : Image{baseImage}, surf{IMG_Load(baseImage.path.c_str())} {};
 
-			sw::SDLManager::SDLManager() {
+	SoftwareImage(SDL_Surface* surf) : Image{"undefined"}, surf{surf} {};
+
+	SDL_Surface* getSurface() {
+		return surf.get();
+	}
+};
+
+class SWRenderManager {
+	private:
+	SDL_Window* window;
+	SDL_Surface* screenSurface;
+
+	public:
+	SWRenderManager(const SWRenderManager&) = delete;
+	SWRenderManager operator=(const SWRenderManager&) = delete;
+
+	SWRenderManager() {
 		// Initialize SDL
 		if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) < 0) {
 			std::string err = "SDL could not initialize! SDL_Error: ";
@@ -58,23 +69,21 @@ namespace vnpge {
 			throw std::runtime_error(err.append(TTF_GetError()));
 		}
 
-
 		//Create window
 		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
 		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
 
+		// If window creation failed, crash and burn
 		if (window == nullptr) {
 			std::string err = "Window could not be created! SDL_Error: "; 
 			throw std::runtime_error(err.append(SDL_GetError()));
 		}
 
-		// Create Image container for the screen surface
-		screen = Image(screenSurface, true);
+		screenSurface = SDL_GetWindowSurface(window);
+	};
 
-	}
-
-	sw::SDLManager::~SDLManager() {
+	~SWRenderManager() {
 		// Unload font support
 		TTF_Quit();
 
@@ -86,22 +95,25 @@ namespace vnpge {
 		
 		// Quit SDL subsystems
 		SDL_Quit();
-	}
+	};
 
-	SDL_Surface* sw::SDLManager::getScreenSurface() {
-		return SDL_GetWindowSurface(window);
-	}
+	SDL_Surface* getScreenSurface() {
+		return screenSurface;
+	};
 
-	SDL_Window* sw::SDLManager::getWindow() {
+	SDL_Window* getWindow() {
 		return window;
-	}
+	};
 
-	Image sw::SDLManager::getScreenImage() {
-		return Image(SDL_GetWindowSurface(window), true);
-	}
+	SoftwareImage getScreenImage() {
+		return {screenSurface};
+	};
 
+	AbsoluteDimensions getScreenDimensions() {
+		return {static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h)};
 	};
 };
+
 
 /**
  * @brief Blits an Image onto another at a specified position.
@@ -112,28 +124,7 @@ namespace vnpge {
  * @param scale_percentage Percentage points to scale the source by before blitting.
  * @return The return status code of the underlying SDL_BlitScaled function. 
  */
-int blitImageConstAspectRatio(Image& src, Image& dest, PositionMapping posMap, uint scale_percentage = 100);
-
-
-void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text);
-
-void renderFrame(sw::SDLManager& SDLInfo, Frame& curFrame, TextBox textBox);
-}
-
-
-
-
-
-/**
- * @brief Blits an Image onto another at a specified position
- * 
- * @param src Source image.
- * @param dest Destination image.
- * @param posMap Position mapping between source and destination. Ignores widths and heights and uses those of the surfaces instead. 
- * @param scale_percentage Percentage points to scale the source by before blitting.
- * @return The return status code of the underlying SDL_BlitScaled function. 
- */
-int blitImageConstAspectRatio(Image& src, Image& dest, PositionMapping posMap, uint scale_percentage) {
+int blitImageConstAspectRatio(SoftwareImage src, SoftwareImage dest, PositionMapping posMap, uint scale_percentage) {
 	
 	// The SDL gods demand a position sacrifice
 	SDL_Rect pos;
@@ -194,42 +185,63 @@ int blitImageConstAspectRatio(Image& src, Image& dest, PositionMapping posMap, u
 	return SDL_BlitScaled(src.getSurface(), nullptr, dest.getSurface(), &pos);
 };
 
-void renderText(SDL_Surface* screenSurface, TextBox& textBox, std::string text) {
+std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions screenSize, RelativeDimensions bgArea) {
+	// Default simple text box
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w*bgArea.w,screenSize.h*bgArea.h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	#else
+	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w*bgArea.w, screenSize.h*bgArea.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	#endif
+	
+	if (textBoxSurface == nullptr) {
+		std::string err = "Surface could not be created! SDL_Error: "; 
+		throw std::runtime_error(err.append(SDL_GetError()));
+	}
 
-	PositionMapping posMap = textBox.getPosMap();
-	posMap = {
-		.srcPos = posMap.srcPos,
-		.destPos = posMap.destPos
+	SDL_Rect textBox = {
+		.x = 0,
+		.y = 0,
+		.w = textBoxSurface->w,
+		.h = textBoxSurface->h
 	};
 
-	AbsoluteDimensions srcDim = {
-		.w = static_cast<uint>(textBox.getBox()->w),
-		.h = static_cast<uint>(textBox.getBox()->h),
+	// Fill with a transparent white
+	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0xFF, 0xFF, 0xFF, 0x7F));
+
+	textBox.x += 4;
+	textBox.y += 4;
+	textBox.w -= 8;
+	textBox.h -= 8;
+
+	// Fill with a transparent black inside the other rectangle, thereby creating a white border
+	// Note that FillRect does not blend alphas, so this alpha replaces the white's
+	// This is actually desirable, since the colours should have different alphas in order to feel equally transparent
+	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0x30, 0x30, 0x30, 0xAF));
+
+	return {
+		textBoxSurface, {
+			.area =     {.w = static_cast<uint>(textBox.w), 
+						.h = static_cast<uint>(textBox.h)},
+			.position = {.x = 4, .y = 4}
+		}
 	};
+}
 
-	AbsoluteDimensions destDim = {
-		.w = static_cast<uint>(screenSurface->w),
-		.h = static_cast<uint>(screenSurface->h)
-	};
-	AbsolutePosition xy = getPixelPosfromPosition(srcDim, destDim, posMap);
+static TextRenderer textRenderer;
+void initRenderer(SWRenderManager& renderManager, Dialogue initDialogue, DialogueFont initFont) {
+	TextBoxInfo boxInfo = {renderManager.getScreenDimensions(), {.w = 1.0, .h = 0.25}};
+	textRenderer = {renderManager.getScreenSurface(), boxInfo, textBGGenerator, initDialogue, initFont};
+}
 
-	SDL_Rect pos = {
-		.x = xy.x,
-		.y = xy.y,
-		.w = textBox.getBox()->w,
-		.h = textBox.getBox()->h,
-	};
-
-	SDL_BlitSurface(textBox.getBox(), nullptr, screenSurface, &pos);
-
-	// TODO: make this relative to the screen
-	pos.x += 20;
-	pos.y += 20;
-
-	SDL_BlitSurface(textBox.getText(), nullptr, screenSurface, &pos);
+void renderText(SWRenderManager& renderManager, Dialogue dialogue, DialogueFont font) {
+	textRenderer.renderStoryFrame(dialogue, font);
+	// hack
+	AbsoluteDimensions d = renderManager.getScreenDimensions();
+	textRenderer.displayText({.x = 0, .y = static_cast<int>(0.75 * d.h)});
+	
 };
 
-void renderFrame(sw::SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
+void renderFrame(SWRenderManager& SDLInfo, Frame& curFrame, TextRenderer textRenderer) {
 	/* Render loop:
 	   	
 		Background - x
@@ -258,7 +270,7 @@ void renderFrame(sw::SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 	// Initial setup
 	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
 	SDL_Window* window = SDLInfo.getWindow();
-	Image screen = SDLInfo.getScreenImage();
+	SoftwareImage screen = SDLInfo.getScreenImage();
 
 	
 
@@ -279,13 +291,13 @@ void renderFrame(sw::SDLManager& SDLInfo, Frame& curFrame, TextBox textBox) {
 	blitImageConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, curFrame.position, 80);
 
 	// Text
-	renderText(screen.getSurface(), textBox, curFrame.textDialogue);
+	renderText(SDLInfo, {curFrame.storyCharacter.name, curFrame.textDialogue, {255, 255, 255}}, {"BonaNova-Italic.ttf"});
 	
 	SDL_UpdateWindowSurface(window);
 
 }
-AbsoluteDimensions sw::SDLManager::getScreenDimensions() {
-	return {static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h)};
-};
+
+
+
 
 };

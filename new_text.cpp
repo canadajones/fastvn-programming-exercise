@@ -32,6 +32,7 @@ class Dialogue {
 
 	Dialogue(std::string name, std::string text, Colour colour) : name{name}, text{text}, colour{colour} {};
 
+	
 	std::string getName() const {
 		return name;
 	}

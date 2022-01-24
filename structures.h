@@ -1,15 +1,9 @@
 #ifndef STRUCTURES_HEADER 
 #define STRUCTURES_HEADER
 
-#include <stdexcept>
-#include <string>
-
-
 #include <iostream>
 
-
 namespace vnpge {
-
 
 // In the interest of documentation:
 // Declare things as struct if they could just as easily be constructed as a simple aggregate structure.
