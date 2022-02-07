@@ -104,7 +104,7 @@ class Chapter {
 			{
 				typename std::vector<Character>::iterator it1 = storyCharacters.begin();
 				for (auto& metaChar : metaCharacters) {
-					charIDToRefMap.insert({metaChar.id, *it1.base()});
+					charIDToRefMap.insert({metaChar.id, *it1});
 					it1 = std::next(it1);
 					
 				}
@@ -129,7 +129,7 @@ class Chapter {
 		};
 
 	
-	typename std::vector<Frame>::iterator nextFrame() {
+	std::vector<Frame>::iterator nextFrame() {
 		if (curFrame != storyFrames.end()) {
 			curFrame = std::next(curFrame);
 		}
@@ -141,7 +141,7 @@ class Chapter {
 		return curFrame;
 	}
 
-	typename std::vector<Frame>::iterator prevFrame() {
+	std::vector<Frame>::iterator prevFrame() {
 		if (curFrame != storyFrames.begin()) {
 			curFrame = std::prev(curFrame);
 			//textBox.generateDisplayText(curFrame->textDialogue);

@@ -18,28 +18,34 @@ module;
 #include "video-sdl-common.h"
 
 #include "structures.h"
-#include "abstract_text.h"
+
 
 export module SoftwareText;
 
 import StoryDialogue;
 
+void shim(TTF_Font* font) {
+	std::cout << "closing font" << std::endl;
+	TTF_CloseFont(font);
+}
 
 export namespace vnpge {
-
-
-class SWFont : DialogueFont {
+	class SWFont : DialogueFont {
 	private:
-	std::shared_ptr<TTF_Font> font;
-	
+		std::shared_ptr<TTF_Font> font;
+
 	public:
-	SWFont(DialogueFont& font) : DialogueFont(font), font{TTF_OpenFont(font.getName().c_str(), 20), TTF_CloseFont} {};
+		SWFont(DialogueFont& font) : DialogueFont(font), font{ TTF_OpenFont(font.getName().c_str(), 60), shim } {};
 
-	TTF_Font* getFont() {
-		return font.get();
-	}
-};
+		SWFont() = default;
+		TTF_Font* getFont() {
+			return font.get();
+		}
 
+		~SWFont() {
+			std::cout << "Font " << getName() << font.use_count() << std::endl;
+		}
+	};
 
 class TextBoxInfo {
 	private:
@@ -58,9 +64,18 @@ class TextBoxInfo {
 	};
 };
 
+
+
 SWFont lookupFont(DialogueFont font) {
 	// TODO: Make this look the font up in a hashmap 
-	return {font};
+	static std::unordered_map<std::string, vnpge::SWFont> fontMap;
+
+	if (fontMap.contains(font.getName())) {
+		return fontMap.at(font.getName());
+	}
+	std::cout << "loaded new font" << std::endl;
+	fontMap.insert({ font.getName(), {font} });
+	return fontMap.at(font.getName());
 }
 
 
@@ -76,7 +91,7 @@ class TextRenderer {
 	std::shared_ptr<SDL_Surface> background;
 	std::shared_ptr<SDL_Surface> text;
 
-	int scrolledLines;
+	int scrolledLines = 0;
 	int lineHeight;
 
 	// Generated values, don't touch

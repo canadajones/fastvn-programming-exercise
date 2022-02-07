@@ -16,7 +16,7 @@ class DialogueFont {
 
 	// TODO: put in getPtSize here from the other file
 	DialogueFont(std::string path) : name{path} {};
-
+	
 	std::string getName() {
 		return name;
 	}

@@ -12,3 +12,5 @@ _deps
 /build/
 /.cache/
 /gcm.cache/
+/out/
+/.vs/

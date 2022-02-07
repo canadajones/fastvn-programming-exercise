@@ -4,7 +4,7 @@
 #include <iostream>
 
 namespace vnpge {
-
+	using uint = unsigned int;
 // In the interest of documentation:
 // Declare things as struct if they could just as easily be constructed as a simple aggregate structure.
 // More formally, if the class

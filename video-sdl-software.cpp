@@ -3,6 +3,7 @@ module;
 #include <memory>
 #include <vector>
 #include <string>
+#include <exception>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_video.h>
@@ -18,22 +19,29 @@ module;
 #include "schedule.h"
 
 
-export module SoftwareRendering;
+export module SoftwareRender;
 import Chapter;
 import Image;
 import StoryDialogue;
 import SoftwareText;
 
-namespace vnpge {
+static vnpge::TextRenderer textRenderer;
 
+export namespace vnpge {
+
+template<typename T>
+void nullDeleter(T* surf) {
+};
 
 class SoftwareImage : Image {
-	private:
+private:
 	std::shared_ptr<SDL_Surface> surf;
-	public:
-	SoftwareImage(Image& baseImage) : Image{baseImage}, surf{IMG_Load(baseImage.path.c_str())} {};
+public:
+	SoftwareImage(Image& baseImage) : Image{ baseImage }, surf{ IMG_Load(baseImage.path.c_str()), SDL_FreeSurface } {};
 
-	SoftwareImage(SDL_Surface* surf) : Image{"undefined"}, surf{surf} {};
+	SoftwareImage(SDL_Surface* surf) : Image{ "undefined" }, surf{ surf, SDL_FreeSurface} {};
+
+	SoftwareImage(SDL_Surface* surf, bool useNullDeleter) : Image{ "undefined" }, surf{ surf, nullDeleter<SDL_Surface> } {};
 
 	SDL_Surface* getSurface() {
 		return surf.get();
@@ -41,20 +49,18 @@ class SoftwareImage : Image {
 };
 
 class SWRenderManager {
-	private:
+private:
 	SDL_Window* window;
 	SDL_Surface* screenSurface;
 
-	public:
-	SWRenderManager(const SWRenderManager&) = delete;
-	SWRenderManager operator=(const SWRenderManager&) = delete;
+public:
 
 	SWRenderManager() {
 		// Initialize SDL
-		if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO) < 0) {
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
 			std::string err = "SDL could not initialize! SDL_Error: ";
 			throw std::runtime_error(err.append(SDL_GetError()));
-		} 	
+		}
 
 		// Load support for the JPG and PNG image formats
 		int flags = IMG_INIT_JPG | IMG_INIT_PNG;
@@ -65,18 +71,18 @@ class SWRenderManager {
 
 		// Grab font rendering library
 		if (TTF_Init()) {
-			std::string err  = "TTF_Init: "; 
+			std::string err = "TTF_Init: ";
 			throw std::runtime_error(err.append(TTF_GetError()));
 		}
 
 		//Create window
-		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
-		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
+		window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 600, SDL_WINDOW_RESIZABLE);
 
 		// If window creation failed, crash and burn
 		if (window == nullptr) {
-			std::string err = "Window could not be created! SDL_Error: "; 
+			std::string err = "Window could not be created! SDL_Error: ";
 			throw std::runtime_error(err.append(SDL_GetError()));
 		}
 
@@ -89,10 +95,10 @@ class SWRenderManager {
 
 		// Unload image format loading support
 		IMG_Quit();
-		
+
 		// Destroy window
 		SDL_DestroyWindow(window);
-		
+
 		// Quit SDL subsystems
 		SDL_Quit();
 	};
@@ -106,29 +112,29 @@ class SWRenderManager {
 	};
 
 	SoftwareImage getScreenImage() {
-		return {screenSurface};
+		return { screenSurface, true };
 	};
 
 	AbsoluteDimensions getScreenDimensions() {
-		return {static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h)};
+		return { static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h) };
 	};
 };
 
 
 /**
- * @brief Blits an Image onto another at a specified position.
- * 
- * @param src Source image.
- * @param dest Destination image.
- * @param posMap Relative position mapping between source and destination. 
- * @param scale_percentage Percentage points to scale the source by before blitting.
- * @return The return status code of the underlying SDL_BlitScaled function. 
- */
+	* @brief Blits an Image onto another at a specified position.
+	*
+	* @param src Source image.
+	* @param dest Destination image.
+	* @param posMap Relative position mapping between source and destination.
+	* @param scale_percentage Percentage points to scale the source by before blitting.
+	* @return The return status code of the underlying SDL_BlitScaled function.
+	*/
 int blitImageConstAspectRatio(SoftwareImage src, SoftwareImage dest, PositionMapping posMap, uint scale_percentage) {
-	
+
 	// The SDL gods demand a position sacrifice
 	SDL_Rect pos;
-	
+
 	// Convenience variables
 	uint srcSurfHeight = src.getSurface()->h;
 	uint srcSurfWidth = src.getSurface()->w;
@@ -144,7 +150,7 @@ int blitImageConstAspectRatio(SoftwareImage src, SoftwareImage dest, PositionMap
 	// Still neater code-wise though, so I'm keeping this for the foreseeable future.
 	double srcWidthDivHeightRatio = static_cast<double>(srcSurfWidth) / static_cast<double>(srcSurfHeight);
 	double srcHeightDivWidthRatio = static_cast<double>(srcSurfHeight) / static_cast<double>(srcSurfWidth);
-	
+
 	// Reduce the integer percentage to a double we can multiply into other expressions
 	double scale = static_cast<double>(scale_percentage) / static_cast<double>(100.0);
 
@@ -188,13 +194,13 @@ int blitImageConstAspectRatio(SoftwareImage src, SoftwareImage dest, PositionMap
 std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions screenSize, RelativeDimensions bgArea) {
 	// Default simple text box
 	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w*bgArea.w,screenSize.h*bgArea.h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+			SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w * bgArea.w, screenSize.h * bgArea.h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
 	#else
-	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w*bgArea.w, screenSize.h*bgArea.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+			SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w * bgArea.w, screenSize.h * bgArea.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 	#endif
-	
+
 	if (textBoxSurface == nullptr) {
-		std::string err = "Surface could not be created! SDL_Error: "; 
+		std::string err = "Surface could not be created! SDL_Error: ";
 		throw std::runtime_error(err.append(SDL_GetError()));
 	}
 
@@ -220,14 +226,14 @@ std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions scree
 
 	return {
 		textBoxSurface, {
-			.area =     {.w = static_cast<uint>(textBox.w), 
+			.area = {.w = static_cast<uint>(textBox.w),
 						.h = static_cast<uint>(textBox.h)},
 			.position = {.x = 4, .y = 4}
 		}
 	};
 }
 
-static TextRenderer textRenderer;
+
 void initRenderer(SWRenderManager& renderManager, Dialogue initDialogue, DialogueFont initFont) {
 	TextBoxInfo boxInfo = {renderManager.getScreenDimensions(), {.w = 1.0, .h = 0.25}};
 	textRenderer = {renderManager.getScreenSurface(), boxInfo, textBGGenerator, initDialogue, initFont};
@@ -241,7 +247,19 @@ void renderText(SWRenderManager& renderManager, Dialogue dialogue, DialogueFont 
 	
 };
 
-void renderFrame(SWRenderManager& SDLInfo, Frame& curFrame, TextRenderer textRenderer) {
+
+void scrollTextUp() {
+	textRenderer.scrollTextUp();
+}
+
+void scrollTextDown() {
+	textRenderer.scrollTextDown();
+}
+
+void updateResolution(TextBoxInfo& info, TextBGCreator<SDL_Surface*> bgCreator) {
+	textRenderer.updateResolution(info, bgCreator);
+}
+void renderFrame(SWRenderManager& SDLInfo, Frame& curFrame) {
 	/* Render loop:
 	   	
 		Background - x
@@ -283,21 +301,25 @@ void renderFrame(SWRenderManager& SDLInfo, Frame& curFrame, TextRenderer textRen
 		.destPos = {0.5, 0.5},
 	};
 	
-	blitImageConstAspectRatio(curFrame.bg, screen, posMap, 100);
+	if (blitImageConstAspectRatio(curFrame.bg, screen, posMap, 100)) {
+		std::string err = "SDL error! Error string is ";
+		throw std::runtime_error(err.append(SDL_GetError()));
+	}
 
 	// Characters
 	
-	// TODO: custom expression handlers
-	blitImageConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, curFrame.position, 80);
-
+	// TODO: custom expression handlers 
+	if (blitImageConstAspectRatio(curFrame.storyCharacter.expressions.at(curFrame.expression), screen, curFrame.position, 80)) {
+		std::string err = "SDL error! Error string is ";
+		throw std::runtime_error(err.append(SDL_GetError()));
+	}
+	
 	// Text
 	renderText(SDLInfo, {curFrame.storyCharacter.name, curFrame.textDialogue, {255, 255, 255}}, {"BonaNova-Italic.ttf"});
 	
 	SDL_UpdateWindowSurface(window);
 
 }
-
-
 
 
 };

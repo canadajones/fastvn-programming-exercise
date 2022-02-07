@@ -1,19 +1,20 @@
-#ifndef JSON_LOADER_HEADER
-#define JSON_LOADER_HEADER
+module;
 
 #include <SDL2/SDL_render.h>
 #include <boost/json/src.hpp>
-#include <boost/json/error.hpp>
-#include <boost/json/value.hpp>
+#include <filesystem>
 
 
+#include "structures.h"
 #include "files.h"
-
-#include "character.h"
-#include "chapter.h"
 #include "loader.h"
 
-namespace vnpge {
+export module JSONLoader;
+
+import StoryCharacter;
+import Chapter;
+
+export namespace vnpge {
 
 namespace json = boost::json;
 
@@ -43,7 +44,7 @@ class JSONLoader : ChapterLoader {
 
 	
 
-	Chapter loadChapter(AbsoluteDimensions screenDims, SDL_Renderer* renderer) {
+	Chapter loadChapter(AbsoluteDimensions screenDims) {
 		
 		// TODO: make this loop through all paths instead of just picking the first one
 		// This is simple to do, but would probably require nesting all of this function inside of a loop
@@ -122,9 +123,7 @@ class JSONLoader : ChapterLoader {
 			// This throws if any character IDs in the source JSON were misspelled
 			metaFrames.emplace_back(textDialogue, charIDToMetaRefMap.at(characterID), expression, posMap, background);
 		}
-		return {chapterName, metaCharacters, metaFrames, screenDims, "BonaNova-Italic.ttf", renderer};
+		return {chapterName, metaCharacters, metaFrames, screenDims, static_cast<std::string>("BonaNova-Italic.ttf")};
 	}
 };
 }
-
-#endif
