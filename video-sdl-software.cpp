@@ -20,6 +20,7 @@ module;
 
 
 export module SoftwareRender;
+
 import Chapter;
 import Image;
 import StoryDialogue;
