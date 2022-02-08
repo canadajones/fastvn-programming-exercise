@@ -9,6 +9,7 @@
 #include <utility>
 #include <iterator>
 #include <memory>
+#include <unordered_map>
 
 #include <cassert>
 #include <cmath>
@@ -101,13 +102,18 @@ int main() {
 	// Move text renderer out of static storage and into main-local variable
 	// This could potentially fix some font errors, and make making new text boxes easier
 
-	initRenderer(SDLInfo, { "testPerson", "test", {.red=0, .green=0, .blue=0} }, { "BonaNova-Italic.ttf" });
+	
 
+	TextBoxInfo boxInfo = {SDLInfo.getScreenDimensions(), {.w = 1.0, .h = 0.25} };
+	textRenderer = { SDLInfo.getScreenSurface(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"BonaNova-Italic.ttf"} };
+	
 	auto& curFrame = chapter.curFrame;
+
+	
+	renderFrame(SDLInfo, *curFrame, textRenderer);
 	
 	
-	
-	while (true) {
+	while (true)   {
 		auto events = handleEvents();
 		for (auto& ev : events) {
 			switch (ev.getAction()) {
@@ -129,12 +135,12 @@ int main() {
 				break;
 
 				case Action::scroll_up: {
-					scrollTextUp();
+					textRenderer.scrollTextUp();
 				}
 				break;
 
 				case Action::scroll_down: {
-					scrollTextDown();
+					textRenderer.scrollTextDown();
 				}
 				break;
 
@@ -143,7 +149,7 @@ int main() {
 					// chapter.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
 					AbsoluteDimensions screenDims = {static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second) };
 					TextBoxInfo info = { screenDims, {0.25, 1.0} };
-					updateResolution(info, makeTextBG);
+					textRenderer.updateResolution(info, makeTextBG);
 				}
 				break;
 				case Action::nothing: {
@@ -161,7 +167,7 @@ int main() {
 			
 			// Only render the frame if there is anything to do.
 			// All current events cause a screen change, so reaching this point means it has to be run.
-			renderFrame(SDLInfo, *curFrame);
+			renderFrame(SDLInfo, *curFrame, textRenderer);
 		}
 		
 		SDL_Delay(10);

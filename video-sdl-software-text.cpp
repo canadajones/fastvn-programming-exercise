@@ -24,27 +24,55 @@ export module SoftwareText;
 
 import StoryDialogue;
 
-void shim(TTF_Font* font) {
-	std::cout << "closing font" << std::endl;
-	TTF_CloseFont(font);
+
+namespace vnpge {
+	uint getPtSize(AbsoluteDimensions boxDims) {
+		double boxHeight = static_cast<double>(boxDims.h) * 0.25;
+		uint ptSize;
+		uint numLines = 5;
+
+		// TODO: Evaluate pixel values based on DPI
+
+		while (boxHeight > 40) {
+			ptSize = boxHeight / numLines;
+			if (ptSize > 60) {
+				numLines += 1;
+				continue;
+			}
+			if (ptSize < 15) {
+				numLines -= 1;
+				continue;
+			}
+
+			if (boxHeight / (numLines + 1) < 35) {
+				break;
+			}
+			else {
+				numLines += 1;
+			}
+		}
+		numLines += static_cast<uint>(boxDims.h / boxDims.w);
+		return static_cast<uint>(std::round(static_cast<double>(boxHeight) / static_cast<double>(numLines))) * 4;
+	}
 }
 
 export namespace vnpge {
 	class SWFont : DialogueFont {
 	private:
 		std::shared_ptr<TTF_Font> font;
-
 	public:
-		SWFont(DialogueFont& font) : DialogueFont(font), font{ TTF_OpenFont(font.getName().c_str(), 60), shim } {};
+		SWFont(DialogueFont& dfont, uint ptSize) : DialogueFont(dfont) {
+			float hdpi, vdpi;
+			SDL_GetDisplayDPI(0, nullptr, &hdpi, &vdpi);
+			font = {TTF_OpenFontDPI(dfont.getName().c_str(), ptSize, hdpi, vdpi), TTF_CloseFont };
+		};
 
 		SWFont() = default;
 		TTF_Font* getFont() {
 			return font.get();
 		}
 
-		~SWFont() {
-			std::cout << "Font " << getName() << font.use_count() << std::endl;
-		}
+		~SWFont() {};
 	};
 
 class TextBoxInfo {
@@ -66,15 +94,13 @@ class TextBoxInfo {
 
 
 
-SWFont lookupFont(DialogueFont font) {
+SWFont lookupFont(DialogueFont font, AbsoluteDimensions& boxDims, std::unordered_map<std::string, vnpge::SWFont>& fontMap) {
 	// TODO: Make this look the font up in a hashmap 
-	static std::unordered_map<std::string, vnpge::SWFont> fontMap;
 
 	if (fontMap.contains(font.getName())) {
 		return fontMap.at(font.getName());
 	}
-	std::cout << "loaded new font" << std::endl;
-	fontMap.insert({ font.getName(), {font} });
+	fontMap.insert({font.getName(), {font, getPtSize(boxDims)}});
 	return fontMap.at(font.getName());
 }
 
@@ -85,9 +111,11 @@ SWFont lookupFont(DialogueFont font) {
  */
 class TextRenderer {
 	private:
+
 	// The destination surface
 	SDL_Surface* dest;
 	
+
 	std::shared_ptr<SDL_Surface> background;
 	std::shared_ptr<SDL_Surface> text;
 
@@ -99,6 +127,7 @@ class TextRenderer {
 	AbsoluteDimensions textArea;
 	AbsolutePosition textPosition; // origin is at upper left of background
 	
+	std::unordered_map<std::string, vnpge::SWFont> fontMap;
 	public:
 	TextRenderer(SDL_Surface* dest, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator,
 				 Dialogue dialogue, DialogueFont font) : dest{dest} {
@@ -118,7 +147,7 @@ class TextRenderer {
 		};
 
 		// Look up font in font table
-		SWFont f = lookupFont(font);
+		SWFont f = lookupFont(font, textArea, fontMap);
 
 		// Temporary storage for the complete text
 		SDL_Surface* renderedText = TTF_RenderUTF8_Blended_Wrapped(f.getFont(), dialogue.getText().c_str(), fgcolour, textArea.w);

@@ -26,7 +26,6 @@ import Image;
 import StoryDialogue;
 import SoftwareText;
 
-static vnpge::TextRenderer textRenderer;
 
 export namespace vnpge {
 
@@ -235,12 +234,8 @@ std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions scree
 }
 
 
-void initRenderer(SWRenderManager& renderManager, Dialogue initDialogue, DialogueFont initFont) {
-	TextBoxInfo boxInfo = {renderManager.getScreenDimensions(), {.w = 1.0, .h = 0.25}};
-	textRenderer = {renderManager.getScreenSurface(), boxInfo, textBGGenerator, initDialogue, initFont};
-}
 
-void renderText(SWRenderManager& renderManager, Dialogue dialogue, DialogueFont font) {
+void renderText(TextRenderer& textRenderer, SWRenderManager& renderManager, Dialogue dialogue, DialogueFont font) {
 	textRenderer.renderStoryFrame(dialogue, font);
 	// hack
 	AbsoluteDimensions d = renderManager.getScreenDimensions();
@@ -249,18 +244,7 @@ void renderText(SWRenderManager& renderManager, Dialogue dialogue, DialogueFont 
 };
 
 
-void scrollTextUp() {
-	textRenderer.scrollTextUp();
-}
-
-void scrollTextDown() {
-	textRenderer.scrollTextDown();
-}
-
-void updateResolution(TextBoxInfo& info, TextBGCreator<SDL_Surface*> bgCreator) {
-	textRenderer.updateResolution(info, bgCreator);
-}
-void renderFrame(SWRenderManager& SDLInfo, Frame& curFrame) {
+void renderFrame(SWRenderManager& SDLInfo, Frame& curFrame, TextRenderer& textRenderer) {
 	/* Render loop:
 	   	
 		Background - x
@@ -316,7 +300,7 @@ void renderFrame(SWRenderManager& SDLInfo, Frame& curFrame) {
 	}
 	
 	// Text
-	renderText(SDLInfo, {curFrame.storyCharacter.name, curFrame.textDialogue, {255, 255, 255}}, {"BonaNova-Italic.ttf"});
+	renderText(textRenderer, SDLInfo, {curFrame.storyCharacter.name, curFrame.textDialogue, {255, 255, 255}}, {"BonaNova-Italic.ttf"});
 	
 	SDL_UpdateWindowSurface(window);
 
