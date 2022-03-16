@@ -22,14 +22,18 @@ namespace json = boost::json;
 class JSONLoader : ChapterLoader {
 	private:
 	static std::vector<std::string> loadIndex(std::string indexPath) {
+		// TODO: have this function return the chapter file paths, sorted by file type
 
 		std::vector<std::string> indexPaths;
+		
+		// parse JSON and grab the root object
 		json::object rootObj;
 		{
 		json::value root;
 		root = json::parse(loadFileToString(indexPath));
 		rootObj = root.as_object();
 		}
+		// grab JSON chapter files
 		for (auto& path : rootObj["index"].as_object()["json"].as_array()) {
 			indexPaths.push_back(path.as_string().data());
 		}

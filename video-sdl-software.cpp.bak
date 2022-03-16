@@ -108,7 +108,6 @@ public:
 	};
 
 	SDL_Surface* getScreenSurface() {
-		screenSurface = SDL_GetWindowSurface(window);
 		return screenSurface;
 	};
 
@@ -117,12 +116,10 @@ public:
 	};
 
 	SoftwareImage getScreenImage() {
-		screenSurface = SDL_GetWindowSurface(window);
 		return { screenSurface, true };
 	};
 
 	AbsoluteDimensions getScreenDimensions() {
-		screenSurface = SDL_GetWindowSurface(window);
 		return { static_cast<uint>(screenSurface->w), static_cast<uint>(screenSurface->h) };
 	};
 

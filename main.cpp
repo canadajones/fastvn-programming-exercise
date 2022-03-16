@@ -41,7 +41,6 @@ using namespace vnpge;
 typedef unsigned int uint;
 
 
-
 std::pair<SDL_Surface*, PositionedArea> makeTextBG(AbsoluteDimensions screenDims, RelativeDimensions boxDims) {
 	Uint32 rmask, gmask, bmask, amask;
 	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -94,18 +93,16 @@ std::pair<SDL_Surface*, PositionedArea> makeTextBG(AbsoluteDimensions screenDims
 
 int main() {
 	SWRenderManager SDLInfo{};
-	TextRenderer textRenderer;
+	TextBoxInfo boxInfo = { SDLInfo.getScreenDimensions(), {.w = 1.0, .h = 0.25} };
+	TextRenderer textRenderer = { SDLInfo.getScreenSurface(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"BonaNova-Italic.ttf"} };
+
+
 	// Load chapter data
 	JSONLoader loader = {"./index.json"};
 	Chapter chapter = loader.loadChapter(SDLInfo.getScreenDimensions());
 
-	// Move text renderer out of static storage and into main-local variable
-	// This could potentially fix some font errors, and make making new text boxes easier
 
 	
-
-	TextBoxInfo boxInfo = {SDLInfo.getScreenDimensions(), {.w = 1.0, .h = 0.25} };
-	textRenderer = { SDLInfo.getScreenSurface(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"BonaNova-Italic.ttf"} };
 	
 	auto& curFrame = chapter.curFrame;
 
@@ -148,8 +145,8 @@ int main() {
 					// This may look complicated, but all it does is create a AbsoluteDimensions object containing the new resolution
 					// chapter.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
 					AbsoluteDimensions screenDims = {static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second) };
-					TextBoxInfo info = { screenDims, {0.25, 1.0} };
-					textRenderer.updateResolution(info, makeTextBG);
+					TextBoxInfo info = { screenDims, {.w = 1.0, .h = 0.25} };
+					textRenderer.updateResolution(SDLInfo.getScreenSurface(), info, makeTextBG);
 				}
 				break;
 				case Action::nothing: {
@@ -167,6 +164,7 @@ int main() {
 			
 			// Only render the frame if there is anything to do.
 			// All current events cause a screen change, so reaching this point means it has to be run.
+			
 			renderFrame(SDLInfo, *curFrame, textRenderer);
 		}
 		

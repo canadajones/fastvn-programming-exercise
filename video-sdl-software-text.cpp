@@ -25,8 +25,49 @@ export module SoftwareText;
 import StoryDialogue;
 
 
-namespace vnpge {
-	uint getPtSize(AbsoluteDimensions boxDims) {
+export namespace vnpge {
+
+	class SWFont : DialogueFont {
+	private:
+	std::shared_ptr<TTF_Font> font;
+
+	public:
+	SWFont(DialogueFont& dfont, uint ptSize) : DialogueFont(dfont) {
+		float hdpi, vdpi;
+		SDL_GetDisplayDPI(0, nullptr, &hdpi, &vdpi);
+		font = {TTF_OpenFontDPI(dfont.getName().c_str(), ptSize, hdpi, vdpi), TTF_CloseFont };
+	};
+
+	SWFont() = default;
+	TTF_Font* getFont() {
+		return font.get();
+	}
+
+	~SWFont() {};
+	};
+
+class TextBoxInfo {
+	private:
+	AbsoluteDimensions resolution;
+	RelativeDimensions relativeArea;
+
+	public:
+	TextBoxInfo(AbsoluteDimensions resolution, RelativeDimensions area) : resolution{resolution}, relativeArea{area} {};
+
+	AbsoluteDimensions getResolution() {
+		return resolution;
+	};
+
+	RelativeDimensions getArea() {
+		return relativeArea;
+	};
+};
+
+
+class FontStorage {
+	private:
+	std::unordered_map<std::string, vnpge::SWFont> fontMap;
+	static uint getPtSize(const AbsoluteDimensions& boxDims) {
 		double boxHeight = static_cast<double>(boxDims.h) * 0.25;
 		uint ptSize;
 		uint numLines = 5;
@@ -54,55 +95,22 @@ namespace vnpge {
 		numLines += static_cast<uint>(boxDims.h / boxDims.w);
 		return static_cast<uint>(std::round(static_cast<double>(boxHeight) / static_cast<double>(numLines))) * 4;
 	}
-}
-
-export namespace vnpge {
-	class SWFont : DialogueFont {
-	private:
-		std::shared_ptr<TTF_Font> font;
 	public:
-		SWFont(DialogueFont& dfont, uint ptSize) : DialogueFont(dfont) {
-			float hdpi, vdpi;
-			SDL_GetDisplayDPI(0, nullptr, &hdpi, &vdpi);
-			font = {TTF_OpenFontDPI(dfont.getName().c_str(), ptSize, hdpi, vdpi), TTF_CloseFont };
-		};
+	SWFont operator() (DialogueFont font, const AbsoluteDimensions& boxDims ) {
+		// BUG: will not refresh point sizes; if window size is changed,
+		// font size will remain the same. A resolution update should call into this object to drop the existing fonts
 
-		SWFont() = default;
-		TTF_Font* getFont() {
-			return font.get();
+
+		if (!fontMap.contains(font.getName())) {
+			fontMap.insert({font.getName(), {font, getPtSize(boxDims)}});
 		}
-
-		~SWFont() {};
-	};
-
-class TextBoxInfo {
-	private:
-	AbsoluteDimensions resolution;
-	RelativeDimensions relativeArea;
-
-	public:
-	TextBoxInfo(AbsoluteDimensions resolution, RelativeDimensions area) : resolution{resolution}, relativeArea{area} {};
-
-	AbsoluteDimensions getResolution() {
-		return resolution;
-	};
-
-	RelativeDimensions getArea() {
-		return relativeArea;
-	};
+		return fontMap.at(font.getName());
+	}
 };
 
 
 
-SWFont lookupFont(DialogueFont font, AbsoluteDimensions& boxDims, std::unordered_map<std::string, vnpge::SWFont>& fontMap) {
-	// TODO: Make this look the font up in a hashmap 
 
-	if (fontMap.contains(font.getName())) {
-		return fontMap.at(font.getName());
-	}
-	fontMap.insert({font.getName(), {font, getPtSize(boxDims)}});
-	return fontMap.at(font.getName());
-}
 
 
 /**
@@ -122,19 +130,19 @@ class TextRenderer {
 	int scrolledLines = 0;
 	int lineHeight;
 
+	FontStorage fontStorage;
+
 	// Generated values, don't touch
 
 	AbsoluteDimensions textArea;
 	AbsolutePosition textPosition; // origin is at upper left of background
 	
-	std::unordered_map<std::string, vnpge::SWFont> fontMap;
 	public:
 	TextRenderer(SDL_Surface* dest, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator,
-				 Dialogue dialogue, DialogueFont font) : dest{dest} {
-		updateResolution(boxInfo, bgCreator);
+				 Dialogue dialogue, DialogueFont font) {
+		updateResolution(dest, boxInfo, bgCreator);
 		renderStoryFrame(dialogue, font);
 	};
-	TextRenderer() = default;
 	
 	SDL_Surface* renderStoryFrame(Dialogue dialogue, DialogueFont font) {
 
@@ -147,7 +155,7 @@ class TextRenderer {
 		};
 
 		// Look up font in font table
-		SWFont f = lookupFont(font, textArea, fontMap);
+		SWFont f = fontStorage(font, textArea);
 
 		// Temporary storage for the complete text
 		SDL_Surface* renderedText = TTF_RenderUTF8_Blended_Wrapped(f.getFont(), dialogue.getText().c_str(), fgcolour, textArea.w);
@@ -159,11 +167,12 @@ class TextRenderer {
 		return text.get();
 	};
 
-	void updateResolution(TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator) {
-		
+	void updateResolution(SDL_Surface* newDest, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator) {
+		dest = newDest;
+
 		// Generate a new text background, complete with information about position and area available to actual text
 		auto textBGSurface = bgCreator(boxInfo.getResolution(), boxInfo.getArea());
-
+		
 		background.reset(textBGSurface.first, SDL_FreeSurface);
 
 		textArea = textBGSurface.second.area;
