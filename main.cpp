@@ -41,55 +41,49 @@ using namespace vnpge;
 typedef unsigned int uint;
 
 
-std::pair<SDL_Surface*, PositionedArea> makeTextBG(AbsoluteDimensions screenDims, RelativeDimensions boxDims) {
-	Uint32 rmask, gmask, bmask, amask;
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		rmask = 0xff000000;
-		gmask = 0x00ff0000;
-		bmask = 0x0000ff00;
-		amask = 0x000000ff;
-	#else
-		rmask = 0x000000ff;
-		gmask = 0x0000ff00;
-		bmask = 0x00ff0000;
-		amask = 0xff000000;
-	#endif
-	
-	int boxW = screenDims.w * boxDims.w;
-	int boxH = screenDims.h * boxDims.h;
 
-	SDL_Surface* textSurf = SDL_CreateRGBSurface(0, boxW, boxH, 32, rmask, gmask, bmask, amask);
-	SDL_Rect rect = {
+std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions screenSize, RelativeDimensions bgArea) {
+	// Default simple text box
+	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+		SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w * bgArea.w, screenSize.h * bgArea.h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	#else
+		SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w * bgArea.w, screenSize.h * bgArea.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	#endif
+
+	if (textBoxSurface == nullptr) {
+		std::string err = "Surface could not be created! SDL_Error: ";
+		throw std::runtime_error(err.append(SDL_GetError()));
+	}
+
+	SDL_Rect textBox = {
 		.x = 0,
 		.y = 0,
-		.w = boxW,
-		.h = boxH
-	};
-	SDL_FillRect(textSurf, &rect, SDL_MapRGBA(textSurf->format, 0, 0, 0, 100));
-
-	
-	rect = {
-		.x = 4,
-		.y = 4,
-		.w = boxW - 8,
-		.h = boxH - 8
+		.w = textBoxSurface->w,
+		.h = textBoxSurface->h
 	};
 
-	SDL_FillRect(textSurf, &rect, SDL_MapRGBA(textSurf->format, 255, 255, 255, 200));
+	// Fill with a transparent white
+	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0xFF, 0xFF, 0xFF, 0x7F));
 
-	PositionedArea area = {
-		.area = {
-			.w = static_cast<uint>(boxW - 8),
-			.h = static_cast<uint>(boxH - 8)
-		},
-		.position = {
-			.x = 4,
-			.y = 4
+	textBox.x += 4;
+	textBox.y += 4;
+	textBox.w -= 8;
+	textBox.h -= 8;
+
+	// Fill with a transparent black inside the other rectangle, thereby creating a white border
+	// Note that FillRect does not blend alphas, so this alpha replaces the white's
+	// This is actually desirable, since the colours should have different alphas in order to feel equally transparent
+	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0x30, 0x30, 0x30, 0xAF));
+
+	return {
+		textBoxSurface, {
+			.area = {.w = static_cast<uint>(textBox.w),
+						.h = static_cast<uint>(textBox.h)},
+			.position = {.x = 4, .y = 4}
 		}
 	};
+}
 
-	return {textSurf, area};
-};
 
 int main() {
 	SWRenderManager SDLInfo{};
@@ -146,7 +140,7 @@ int main() {
 					// chapter.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
 					AbsoluteDimensions screenDims = {static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second) };
 					TextBoxInfo info = { screenDims, {.w = 1.0, .h = 0.25} };
-					textRenderer.updateResolution(SDLInfo.getScreenSurface(), info, makeTextBG);
+					textRenderer.updateResolution(SDLInfo.getScreenSurface(), info, textBGGenerator);
 				}
 				break;
 				case Action::nothing: {
