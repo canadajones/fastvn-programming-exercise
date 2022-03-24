@@ -97,14 +97,14 @@ class FontStorage {
 	}
 	public:
 	SWFont operator() (DialogueFont font, const AbsoluteDimensions& boxDims ) {
-		// BUG: will not refresh point sizes; if window size is changed,
-		// font size will remain the same. A resolution update should call into this object to drop the existing fonts
-
-
 		if (!fontMap.contains(font.getName())) {
 			fontMap.insert({font.getName(), {font, getPtSize(boxDims)}});
 		}
 		return fontMap.at(font.getName());
+	}
+
+	void clear() {
+		fontMap.clear();
 	}
 };
 
@@ -160,9 +160,13 @@ class TextRenderer {
 		// Temporary storage for the complete text
 		SDL_Surface* renderedText = TTF_RenderUTF8_Blended_Wrapped(f.getFont(), dialogue.getText().c_str(), fgcolour, textArea.w);
 		
+		// Store the updated text
 		text.reset(renderedText, SDL_FreeSurface);
 
+		// Grab the line height of the text, for scrolling purposes
 		lineHeight = TTF_FontLineSkip(f.getFont());
+
+		resetScroll();
 
 		return text.get();
 	};
@@ -177,6 +181,8 @@ class TextRenderer {
 
 		textArea = textBGSurface.second.area;
 		textPosition = textBGSurface.second.position;
+
+		fontStorage.clear();
 	};
 
 	void displayText(AbsolutePosition position) {
@@ -215,8 +221,7 @@ class TextRenderer {
 	 * 
 	 */
 	void scrollTextUp() {
-		
-		if (static_cast<int>(textArea.h) < text->h && scrolledLines * lineHeight <= text->h) {
+		if (static_cast<int>(textArea.h) < text->h && (scrolledLines + 1) * lineHeight < text->h) {
 			scrolledLines++;
 		}
 	};
@@ -228,6 +233,10 @@ class TextRenderer {
 		if (scrolledLines > 0) {
 			scrolledLines--;
 		}
+	}
+
+	void resetScroll() {
+		scrolledLines = 0;
 	}
 };
 

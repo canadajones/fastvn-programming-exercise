@@ -72,7 +72,6 @@ struct Frame {
 };
 
 // TODO: Write up a good summary of the Chapter organisatorial structure.
-// TODO: Make this independent of rendering backend (why does the abstract chapter structure need to know which class backs the images?)
 class Chapter {
 	private:
 	static const std::vector<Character> demetaCharacterVec(const std::vector<MetaCharacter>& metaCharacters) {
@@ -93,8 +92,7 @@ class Chapter {
 
 		typename std::vector<Frame>::iterator curFrame;
 	public:
-		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames,
-		AbsoluteDimensions pixelDimensions, std::string font) 
+		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames) 
 		: chapterName{name}, storyCharacters{demetaCharacterVec(metaCharacters)} {
 			storyFrames.reserve(metaFrames.size());
 			

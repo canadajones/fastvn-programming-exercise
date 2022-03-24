@@ -12,9 +12,7 @@ class DialogueFont {
 	private:
 	std::string name;
 	
-	public:	
-
-	// TODO: put in getPtSize here from the other file
+	public:
 	DialogueFont(std::string path) : name{path} {};
 	
 	std::string getName() const {

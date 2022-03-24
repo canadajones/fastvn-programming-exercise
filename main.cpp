@@ -23,6 +23,7 @@
 #include "structures.h"
 #include "schedule.h"
 
+#include "debug.h"
 
 
 import Image;
@@ -43,6 +44,9 @@ typedef unsigned int uint;
 
 
 std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions screenSize, RelativeDimensions bgArea) {
+	const int borderThickness = 4;
+	const int padding = 10;
+	
 	// Default simple text box
 	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
 		SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w * bgArea.w, screenSize.h * bgArea.h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
@@ -65,10 +69,11 @@ std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions scree
 	// Fill with a transparent white
 	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0xFF, 0xFF, 0xFF, 0x7F));
 
-	textBox.x += 4;
-	textBox.y += 4;
-	textBox.w -= 8;
-	textBox.h -= 8;
+	
+	textBox.x += borderThickness;
+	textBox.y += borderThickness;
+	textBox.w -= borderThickness * 2;
+	textBox.h -= borderThickness * 2;
 
 	// Fill with a transparent black inside the other rectangle, thereby creating a white border
 	// Note that FillRect does not blend alphas, so this alpha replaces the white's
@@ -77,9 +82,11 @@ std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions scree
 
 	return {
 		textBoxSurface, {
-			.area = {.w = static_cast<uint>(textBox.w),
-						.h = static_cast<uint>(textBox.h)},
-			.position = {.x = 4, .y = 4}
+			.area		= { 
+							.w = static_cast<uint>(textBox.w) - 2 * padding,
+							.h = static_cast<uint>(textBox.h) - 2 * padding},
+			.position =	  {	.x = borderThickness + padding, 
+							.y = borderThickness + padding}
 		}
 	};
 }
@@ -88,16 +95,14 @@ std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions scree
 int main() {
 	SWRenderManager SDLInfo{};
 	TextBoxInfo boxInfo = { SDLInfo.getScreenDimensions(), {.w = 1.0, .h = 0.25} };
-	TextRenderer textRenderer = { SDLInfo.getScreenSurface(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"BonaNova-Italic.ttf"} };
+	TextRenderer textRenderer = { SDLInfo.getScreenSurface(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"assets/fonts/BonaNova-Italic.ttf"} };
 
 
 	// Load chapter data
-	JSONLoader loader = {"./index.json"};
-	Chapter chapter = loader.loadChapter(SDLInfo.getScreenDimensions());
+	JSONLoader loader = {"assets/scripts/index.json"};
+	Chapter chapter = loader.loadChapter();
 
 
-	
-	
 	auto& curFrame = chapter.curFrame;
 
 	
@@ -116,7 +121,6 @@ int main() {
 
 				case Action::next_page: {
 					chapter.nextFrame();
-					
 				}
 				break;
 
@@ -166,7 +170,6 @@ int main() {
 	}
 
 	// TODO:
-	// Make a loader at some point, though after the main displayer works
 
 	// "System" queues, to enable more flexibility in terms of input and effects and such
 	// Add "dynamic" loading of code (adding new modules may require a recompile, but simply including it should be enough to load it)
