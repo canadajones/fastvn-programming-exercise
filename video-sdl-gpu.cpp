@@ -84,6 +84,10 @@ public:
 			throw std::runtime_error(err.append(TTF_GetError()));
 		}
 
+		
+		std::cout << ((SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, "2", SDL_HINT_OVERRIDE) == SDL_TRUE) ? "antialias accepted" : "no aa") << std::endl;
+		SDL_SetHintWithPriority(SDL_HINT_RENDER_DRIVER, "opengl", SDL_HINT_OVERRIDE);
+
 		//Create window
 		//window = SDL_CreateWindow("test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1000, 800, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
@@ -101,6 +105,7 @@ public:
 			std::string err = "Renderer could not be created! SDL_Error: ";
 			throw std::runtime_error(err.append(SDL_GetError()));
 		}
+		std::cout << SDL_GetHint(SDL_HINT_RENDER_SCALE_QUALITY) << std::endl;
 	};
 
 	~GPURenderManager() {
@@ -157,11 +162,14 @@ public:
 		// The SDL gods demand a position sacrifice
 		SDL_Rect pos;
 
-
+		// Query image in cache
 		GPUImage image = getImage(src);
 
+		// Get texture width and height
 		int w, h;
 		SDL_QueryTexture(image.getTexture(), nullptr, nullptr, &w, &h);
+
+		SDL_SetTextureBlendMode(image.getTexture(), SDL_BLENDMODE_BLEND);
 
 		// Convenience variables
 		uint srcTextureWidth	= w;
@@ -218,7 +226,7 @@ public:
 		pos.y = xy.y;
 
 
-		return SDL_RenderCopy(renderer, image.getTexture(), nullptr, &pos);
+		return SDL_RenderCopyEx(renderer, image.getTexture(), nullptr, &pos, 0, nullptr, SDL_FLIP_NONE);
 	};
 };
 

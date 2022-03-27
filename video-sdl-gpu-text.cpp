@@ -79,18 +79,20 @@ class FontStorage {
 
 		// TODO: Evaluate pixel values based on DPI
 
-		while (boxHeight > 40) {
+		while (boxHeight > 20) {
 			ptSize = boxHeight / numLines;
-			if (ptSize > 60) {
+			std::cout << "ptSize: " << ptSize << std::endl;
+			if (ptSize > 30) {
 				numLines += 1;
 				continue;
 			}
-			if (ptSize < 15) {
+			if (ptSize < 10) {
 				numLines -= 1;
 				continue;
 			}
 
-			if (boxHeight / (numLines + 1) < 35) {
+			if (boxHeight / (numLines + 1) < 25) {
+				std::cout << "boxheight: " << boxHeight << ", numLines: " << numLines << std::endl;
 				break;
 			}
 			else {
@@ -98,7 +100,9 @@ class FontStorage {
 			}
 		}
 		numLines += static_cast<uint>(boxDims.h / boxDims.w);
-		return static_cast<uint>(std::round(static_cast<double>(boxHeight) / static_cast<double>(numLines))) * 4;
+
+
+		return static_cast<uint>(std::round(static_cast<double>(boxHeight) / static_cast<double>(numLines))) * 3;
 	}
 	public:
 	GPUFont operator() (DialogueFont font, const AbsoluteDimensions& boxDims ) {
@@ -176,8 +180,6 @@ class TextRenderer {
 		// Grab the line height of the text, for scrolling purposes
 		lineHeight = TTF_FontLineSkip(f.getFont());
 
-		resetScroll();
-
 		return text.get();
 	};
 
@@ -195,6 +197,7 @@ class TextRenderer {
 		SDL_FreeSurface(textBGSurface.first);
 
 		fontStorage.clear();
+		resetScroll();
 	};
 
 	void displayText(AbsolutePosition position) {
@@ -237,6 +240,8 @@ class TextRenderer {
 			.h = static_cast<int>(textArea.h)
 		};
 		
+		
+
 		// Put text on screen (less easy!)
 		SDL_RenderCopy(dest, text.get(), &srcPos, &destPos);
 	};
@@ -248,8 +253,9 @@ class TextRenderer {
 	void scrollTextUp() {
 		int w, h;
 		SDL_QueryTexture(text.get(), nullptr, nullptr, &w, &h);
-
-		if (static_cast<int>(textArea.h) < h && (scrolledLines + 1) * lineHeight < h) {
+		
+		//	Is there more text than can fit  && is the area scrolled away < the difference between the displayable area and the text area 
+		if (static_cast<int>(textArea.h) < h && scrolledLines * lineHeight < h - textArea.h) {
 			scrolledLines++;
 		}
 	};

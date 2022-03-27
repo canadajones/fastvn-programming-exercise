@@ -28,9 +28,18 @@
 
 import Image;
 import Chapter;
-import AcceleratedText;
 import JSONLoader;
+
+#define GPU_RENDER 
+
+#ifdef GPU_RENDER
+import AcceleratedText;
 import AcceleratedRender;
+#else 
+import SoftwareText;
+import SoftwareRender;
+#endif
+
 
 using std::cout; //NOLINT(misc-unused-using-decls)
 using std::cin;  //NOLINT(misc-unused-using-decls)
@@ -93,12 +102,21 @@ std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions scree
 
 
 int main() {
-	//SWRenderManager SDLInfo{};
-	GPURenderManager SDLInfo{};
-	TextBoxInfo boxInfo = { SDLInfo.getScreenDimensions(), {.w = 1.0, .h = 0.25} };
-	TextRenderer textRenderer = { SDLInfo.getRenderer(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"assets/fonts/BonaNova-Italic.ttf"} };
-
 	
+	#ifdef GPU_RENDER
+	GPURenderManager SDLInfo{};
+	#else
+	SWRenderManager SDLInfo{};
+	#endif
+	
+	
+	TextBoxInfo boxInfo = { SDLInfo.getScreenDimensions(), {.w = 1.0, .h = 0.25} };
+	
+	#ifdef GPU_RENDER
+	TextRenderer textRenderer = { SDLInfo.getRenderer(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"assets/fonts/BonaNova-Italic.ttf"} };
+	#else
+	TextRenderer textRenderer = { SDLInfo.getScreenSurface(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"assets/fonts/BonaNova-Italic.ttf"}};
+	#endif
 
 
 
@@ -125,11 +143,13 @@ int main() {
 
 				case Action::next_page: {
 					chapter.nextFrame();
+					textRenderer.resetScroll();
 				}
 				break;
 
 				case Action::prev_page: {
 					chapter.prevFrame();
+					textRenderer.resetScroll();
 				}
 				break;
 
@@ -148,7 +168,11 @@ int main() {
 					// chapter.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
 					AbsoluteDimensions screenDims = {static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second) };
 					TextBoxInfo info = { screenDims, {.w = 1.0, .h = 0.25} };
+					#ifdef GPU_RENDER
 					textRenderer.updateResolution(SDLInfo.getRenderer(), info, textBGGenerator);
+					#else
+					textRenderer.updateResolution(SDLInfo.getScreenSurface(), info, textBGGenerator);
+					#endif
 				}
 				break;
 				case Action::nothing: {

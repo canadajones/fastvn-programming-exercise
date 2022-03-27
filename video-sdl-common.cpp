@@ -45,41 +45,6 @@ AbsolutePosition getPixelPosfromPosition(AbsoluteDimensions& srcDim, AbsoluteDim
 
 	return { srcDestPixPosX, srcDestPixPosY };
 };
-SDL_Surface* makeTextBox(AbsoluteDimensions pixelDimensions, RelativeDimensions relDimensions) {
-	// Default simple text box
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, pixelDimensions.w*relDimensions.w, pixelDimensions.h*relDimensions.h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	#else
-	SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, pixelDimensions.w*relDimensions.w, pixelDimensions.h*relDimensions.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	#endif
-	
-	if (textBoxSurface == nullptr) {
-		std::string err = "Surface could not be created! SDL_Error: "; 
-		throw std::runtime_error(err.append(SDL_GetError()));
-	}
-
-	SDL_Rect textBox = {
-		.x = 0,
-		.y = 0,
-		.w = textBoxSurface->w,
-		.h = textBoxSurface->h
-	};
-
-	// Fill with a transparent white
-	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0xFF, 0xFF, 0xFF, 0x7F));
-
-	textBox.x += 4;
-	textBox.y += 4;
-	textBox.w -= 8;
-	textBox.h -= 8;
-
-	// Fill with a transparent black inside the other rectangle, thereby creating a white border
-	// Note that FillRect does not blend alphas, so this alpha replaces the white's
-	// This is actually desirable, since the colours should have different alphas in order to feel equally transparent
-	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0x30, 0x30, 0x30, 0xAF));
-
-	return textBoxSurface;
-};
 
 SDL_Surface* makeNewSurface(uint w, uint h) {
 	SDL_Surface* surf;
@@ -157,10 +122,13 @@ Schedule<Event> handleEvents() {
 	return evSched;
 };
 
-
-std::string printRect(SDL_Rect& rect) {
+std::string printRect(const SDL_Rect& rect) {
 	return { "x: " + std::to_string(rect.x) + ", y: " + std::to_string(rect.y) +
 		", w: " + std::to_string(rect.w) + ", h: " + std::to_string(rect.h) };
+};
+
+std::string printAbsDims(const AbsoluteDimensions& dims) {
+	return { "w: " + std::to_string(dims.w) + ", h : " + std::to_string(dims.h) };
+};
 }
 
-}

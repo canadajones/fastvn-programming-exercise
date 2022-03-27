@@ -12,5 +12,6 @@ namespace vnpge {
 	AbsolutePosition getPixelPosfromPosition(AbsoluteDimensions& srcDim, AbsoluteDimensions& destDim, PositionMapping& posMap);
 	
 	std::string printRect(SDL_Rect& rect);
+	std::string printAbsDims(const AbsoluteDimensions& dims);
 }
 #endif
