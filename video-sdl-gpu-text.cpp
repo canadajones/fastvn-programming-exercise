@@ -121,11 +121,11 @@ class TextRenderer {
 	private:
 
 	// The destination surface
-	SDL_Surface* dest;
+	SDL_Renderer* dest;
 	
 
-	std::shared_ptr<SDL_Surface> background;
-	std::shared_ptr<SDL_Surface> text;
+	std::shared_ptr<SDL_Texture> background;
+	std::shared_ptr<SDL_Texture> text;
 
 	int scrolledLines = 0;
 	int lineHeight;
@@ -138,13 +138,13 @@ class TextRenderer {
 	AbsolutePosition textPosition; // origin is at upper left of background
 	
 	public:
-	TextRenderer(SDL_Surface* dest, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator,
+	TextRenderer(SDL_Renderer* dest, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator,
 				 Dialogue dialogue, DialogueFont font) {
 		updateResolution(dest, boxInfo, bgCreator);
 		renderStoryFrame(dialogue, font);
 	};
 	
-	SDL_Surface* renderStoryFrame(Dialogue dialogue, DialogueFont font) {
+	SDL_Texture* renderStoryFrame(Dialogue dialogue, DialogueFont font) {
 
 		// Grab dialogue colour
 		SDL_Color fgcolour = {
@@ -161,7 +161,12 @@ class TextRenderer {
 		SDL_Surface* renderedText = TTF_RenderUTF8_Blended_Wrapped(f.getFont(), dialogue.getText().c_str(), fgcolour, textArea.w);
 		
 		// Store the updated text
-		text.reset(renderedText, SDL_FreeSurface);
+		text.reset(SDL_CreateTextureFromSurface(dest, renderedText), SDL_DestroyTexture);
+
+
+		// Free the temporary storage
+		SDL_FreeSurface(renderedText);
+		
 
 		// Grab the line height of the text, for scrolling purposes
 		lineHeight = TTF_FontLineSkip(f.getFont());
@@ -171,16 +176,18 @@ class TextRenderer {
 		return text.get();
 	};
 
-	void updateResolution(SDL_Surface* newDest, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator) {
+	void updateResolution(SDL_Renderer* newDest, TextBoxInfo boxInfo, TextBGCreator<SDL_Surface*> bgCreator) {
 		dest = newDest;
 
 		// Generate a new text background, complete with information about position and area available to actual text
 		auto textBGSurface = bgCreator(boxInfo.getResolution(), boxInfo.getArea());
 		
-		background.reset(textBGSurface.first, SDL_FreeSurface);
+		background.reset(SDL_CreateTextureFromSurface(dest, textBGSurface.first), SDL_DestroyTexture);
 
 		textArea = textBGSurface.second.area;
 		textPosition = textBGSurface.second.position;
+		
+		SDL_FreeSurface(textBGSurface.first);
 
 		fontStorage.clear();
 	};
@@ -193,7 +200,7 @@ class TextRenderer {
 		};
 		
 		// Put box on screen (easy!)
-		SDL_BlitSurface(background.get(), nullptr, dest, &destPos);
+		SDL_RenderCopy(dest, background.get(), nullptr, &destPos);
 
 		// Offset box pos by text position within the box
 		destPos = {
@@ -213,7 +220,9 @@ class TextRenderer {
 		};
 		
 		// Put text on screen (less easy!)
-		SDL_BlitSurface(text.get(), &srcPos, dest, &destPos);
+		SDL_RenderCopy(dest, text.get(), &srcPos, &destPos);
+
+		SDL_RenderPresent(dest);
 	};
 
 	/**
@@ -221,7 +230,10 @@ class TextRenderer {
 	 * 
 	 */
 	void scrollTextUp() {
-		if (static_cast<int>(textArea.h) < text->h && (scrolledLines + 1) * lineHeight < text->h) {
+		int w, h;
+		SDL_QueryTexture(text.get(), nullptr, nullptr, &w, &h);
+
+		if (static_cast<int>(textArea.h) < h && (scrolledLines + 1) * lineHeight < h) {
 			scrolledLines++;
 		}
 	};

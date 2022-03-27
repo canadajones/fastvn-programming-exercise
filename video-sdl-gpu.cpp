@@ -38,8 +38,12 @@ class GPUImage : Image {
 private:
 	std::shared_ptr<SDL_Texture> texture;
 public:
-	GPUImage(Image& baseImage, SDL_Renderer* renderer) : Image{ baseImage } {
+	GPUImage(SDL_Renderer* renderer, const Image& baseImage) : Image{ baseImage } {
+		
+		std::cout << "load file" << std::endl;
 		SDL_Surface* surf = IMG_Load(baseImage.path.c_str());
+		
+		std::cout << "generate texture" << std::endl;
 
 		texture = {SDL_CreateTextureFromSurface(renderer, surf), SDL_DestroyTexture};
 
@@ -136,7 +140,7 @@ public:
 		if (imageMap.contains(image.path)) {
 			return imageMap.at(image.path);
 		}
-		imageMap.insert({image.path, {image}});
+		imageMap.insert({image.path, {renderer, image}});
 		return imageMap.at(image.path);
 	};
 
@@ -145,8 +149,8 @@ public:
 	*
 	* @param src Source image.
 	* @param posMap Relative position mapping between source and destination.
-	* @param scale_percentage Percentage points to scale the source by before blitting.
-	* @return The return status code of the underlying SDL_BlitScaled function.
+	* @param scale_percentage Percentage points to scale the source by before rendering.
+	* @return The return status code of the underlying SDL_RenderCopy function.
 	*/
 	int renderImage(Image src, PositionMapping posMap, uint scale_percentage) {
 
@@ -256,24 +260,22 @@ void renderFrame(GPURenderManager& SDLInfo, Frame& curFrame, TextRenderer& textR
 			
 	*/
 
-	// Initial setup
-	SDL_Surface* screenSurface = SDLInfo.getScreenSurface();
-	SDL_Window* window = SDLInfo.getWindow();
-	GPUImage screen = SDLInfo.getScreenImage();
-
 	
 
 	// Background
 	std::cout << "background" << std::endl;
 
-	SDL_FillRect(screenSurface, nullptr, SDL_MapRGB(screenSurface->format, 0x00, 0x00, 0x00));
+	SDL_SetRenderDrawColor(SDLInfo.getRenderer(), 0, 0, 0, SDL_ALPHA_OPAQUE);
 	
+
+	SDL_RenderClear(SDLInfo.getRenderer());
+
 	PositionMapping posMap = {
 		.srcPos = {0.5, 0.5},
 		.destPos = {0.5, 0.5},
 	};
 	
-	if (blitImageConstAspectRatio(SDLInfo.getImage(curFrame.bg), screen, posMap, 100)) {
+	if (SDLInfo.renderImage(curFrame.bg, posMap, 100)) {
 		std::string err = "SDL error! Error string is ";
 		throw std::runtime_error(err.append(SDL_GetError()));
 	}
@@ -281,7 +283,7 @@ void renderFrame(GPURenderManager& SDLInfo, Frame& curFrame, TextRenderer& textR
 	// Characters
 	std::cout << "characters" << std::endl;
 	// TODO: custom expression handlers 
-	if (blitImageConstAspectRatio(SDLInfo.getImage(curFrame.storyCharacter.expressions.at(curFrame.expression)), screen, curFrame.position, 80)) {
+	if (SDLInfo.renderImage(curFrame.storyCharacter.expressions.at(curFrame.expression), curFrame.position, 80)) {
 		std::string err = "SDL error! Error string is ";
 		throw std::runtime_error(err.append(SDL_GetError()));
 	}
@@ -291,7 +293,7 @@ void renderFrame(GPURenderManager& SDLInfo, Frame& curFrame, TextRenderer& textR
 	renderText(textRenderer, SDLInfo, {curFrame.storyCharacter.name, curFrame.textDialogue, {255, 255, 255}}, {"BonaNova-Italic.ttf"});
 	
 	std::cout << "flip buffers" << std::endl;
-	SDL_UpdateWindowSurface(window);
+	SDL_RenderPresent(SDLInfo.getRenderer());
 
 }
 

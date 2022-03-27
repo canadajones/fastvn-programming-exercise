@@ -28,9 +28,9 @@
 
 import Image;
 import Chapter;
-import SoftwareText;
+import AcceleratedText;
 import JSONLoader;
-import SoftwareRender;
+import AcceleratedRender;
 
 using std::cout; //NOLINT(misc-unused-using-decls)
 using std::cin;  //NOLINT(misc-unused-using-decls)
@@ -93,9 +93,13 @@ std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions scree
 
 
 int main() {
-	SWRenderManager SDLInfo{};
+	//SWRenderManager SDLInfo{};
+	GPURenderManager SDLInfo{};
 	TextBoxInfo boxInfo = { SDLInfo.getScreenDimensions(), {.w = 1.0, .h = 0.25} };
-	TextRenderer textRenderer = { SDLInfo.getScreenSurface(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"assets/fonts/BonaNova-Italic.ttf"} };
+	TextRenderer textRenderer = { SDLInfo.getRenderer(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"assets/fonts/BonaNova-Italic.ttf"} };
+
+	
+
 
 
 	// Load chapter data
@@ -144,7 +148,7 @@ int main() {
 					// chapter.updateResolution({static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second)}, makeTextBox);
 					AbsoluteDimensions screenDims = {static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second) };
 					TextBoxInfo info = { screenDims, {.w = 1.0, .h = 0.25} };
-					textRenderer.updateResolution(SDLInfo.getScreenSurface(), info, textBGGenerator);
+					textRenderer.updateResolution(SDLInfo.getRenderer(), info, textBGGenerator);
 				}
 				break;
 				case Action::nothing: {
