@@ -1,6 +1,7 @@
 #include <SDL2/SDL_error.h>
 #include <stdexcept>
 #include <vector>
+#include <string>
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keycode.h>
@@ -155,5 +156,11 @@ Schedule<Event> handleEvents() {
 	Schedule<Event> evSched = {events};
 	return evSched;
 };
+
+
+std::string printRect(SDL_Rect& rect) {
+	return { "x: " + std::to_string(rect.x) + ", y: " + std::to_string(rect.y) +
+		", w: " + std::to_string(rect.w) + ", h: " + std::to_string(rect.h) };
+}
 
 }

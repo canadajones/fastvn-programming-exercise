@@ -290,7 +290,7 @@ void renderFrame(GPURenderManager& SDLInfo, Frame& curFrame, TextRenderer& textR
 	
 	// Text
 	std::cout << "text" << std::endl;
-	renderText(textRenderer, SDLInfo, {curFrame.storyCharacter.name, curFrame.textDialogue, {255, 255, 255}}, {"BonaNova-Italic.ttf"});
+	renderText(textRenderer, SDLInfo, {curFrame.storyCharacter.name, curFrame.textDialogue, {255, 255, 255}}, {"assets/fonts/BonaNova-Italic.ttf"});
 	
 	std::cout << "flip buffers" << std::endl;
 	SDL_RenderPresent(SDLInfo.getRenderer());

@@ -36,6 +36,11 @@ export namespace vnpge {
 		float hdpi, vdpi;
 		SDL_GetDisplayDPI(0, nullptr, &hdpi, &vdpi);
 		font = {TTF_OpenFontDPI(dfont.getName().c_str(), ptSize, hdpi, vdpi), TTF_CloseFont };
+
+		if (font == nullptr) {
+			std::string err = "Font could not be loaded. TTF_Error:";
+			throw std::runtime_error(err.append(TTF_GetError()));
+		}
 	};
 
 	GPUFont() = default;
@@ -194,18 +199,31 @@ class TextRenderer {
 
 	void displayText(AbsolutePosition position) {
 		
+		int w, h;
+		SDL_GetRendererOutputSize(dest, &w, &h);
+
 		SDL_Rect destPos = {
 			.x = position.x,
 			.y = position.y,
+			.w = w,
+			.h = static_cast<int>(h * 0.25)
 		};
 		
 		// Put box on screen (easy!)
-		SDL_RenderCopy(dest, background.get(), nullptr, &destPos);
+		if (SDL_RenderCopy(dest, background.get(), nullptr, &destPos)) {
+			throw std::runtime_error(SDL_GetError());
+		}
+		
+		// Grab the text dimensions (reuses w and h from above; not neat, but the alternative is even less neat)
+		// TODO: write a wrapper for QueryTexture and GetRendererOutputSize
+		SDL_QueryTexture(text.get(), nullptr, nullptr, &w, &h);
 
 		// Offset box pos by text position within the box
 		destPos = {
 			.x = position.x + textPosition.x,
-			.y = position.y + textPosition.y
+			.y = position.y + textPosition.y,
+			.w = w,
+			.h = static_cast<int>((h > textArea.h) ? textArea.h : h)
 		};
 
 		// Pick a rectangle representing the current scrolled level
@@ -221,8 +239,6 @@ class TextRenderer {
 		
 		// Put text on screen (less easy!)
 		SDL_RenderCopy(dest, text.get(), &srcPos, &destPos);
-
-		SDL_RenderPresent(dest);
 	};
 
 	/**

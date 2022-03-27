@@ -7,9 +7,10 @@
 
 namespace vnpge {
 	SDL_Surface* makeNewSurface(uint w, uint h);
-	SDL_Surface* makeTextBox(AbsoluteDimensions pixelDimensions, RelativeDimensions relDimensions);
 	
 	Schedule<Event> handleEvents();
 	AbsolutePosition getPixelPosfromPosition(AbsoluteDimensions& srcDim, AbsoluteDimensions& destDim, PositionMapping& posMap);
+	
+	std::string printRect(SDL_Rect& rect);
 }
 #endif
