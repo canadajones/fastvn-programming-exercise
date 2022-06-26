@@ -10,6 +10,7 @@
 #include <iterator>
 #include <memory>
 #include <unordered_map>
+#include <filesystem>
 
 #include <cassert>
 #include <cmath>
@@ -39,6 +40,8 @@ import AcceleratedRender;
 import SoftwareText;
 import SoftwareRender;
 #endif
+
+import SFMLRendering;
 
 
 using std::cout; //NOLINT(misc-unused-using-decls)
@@ -103,6 +106,28 @@ std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions scree
 
 int main() {
 	
+	SFMLCompositor c;
+	CompositorArea a{ {.dimensions = {  .w = 0.5,
+										.h = 0.5 },
+						.position = {.srcPos =  {.x = 0.2,
+											     .y = 0.2 },
+									 .destPos = {.x = 0.3,
+												 .y = 0.3 }
+									}
+					  },
+	[]{return true; }, [](const auto& rt) {}};
+
+	c.addArea("stella", "vnpge::foreground", a);
+	c.addArea("flower", "stella", a);
+	c.addArea("claire", "vnpge::foreground", a);
+	c.addArea("pot hat", "claire", a);
+	c.addArea("crown", "pot hat", a);
+
+	c.computeOrder();
+
+	SDL_Delay(5000);
+	return 0;
+
 	#ifdef GPU_RENDER
 	GPURenderManager SDLInfo{};
 	#else
@@ -113,7 +138,7 @@ int main() {
 	TextBoxInfo boxInfo = { SDLInfo.getScreenDimensions(), {.w = 1.0, .h = 0.25} };
 	
 	#ifdef GPU_RENDER
-	TextRenderer textRenderer = { SDLInfo.getRenderer(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"assets/fonts/BonaNova-Italic.ttf"} };
+	TextRenderer textRenderer = { SDLInfo.getWindowRenderer().getRenderer(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"assets/fonts/BonaNova-Italic.ttf"}};
 	#else
 	TextRenderer textRenderer = { SDLInfo.getScreenSurface(), boxInfo, textBGGenerator, {"placeholder", "this is a bug", {0, 0, 0}}, {"assets/fonts/BonaNova-Italic.ttf"}};
 	#endif
@@ -169,7 +194,7 @@ int main() {
 					AbsoluteDimensions screenDims = {static_cast<uint>(ev.getData().first), static_cast<uint>(ev.getData().second) };
 					TextBoxInfo info = { screenDims, {.w = 1.0, .h = 0.25} };
 					#ifdef GPU_RENDER
-					textRenderer.updateResolution(SDLInfo.getRenderer(), info, textBGGenerator);
+					textRenderer.updateResolution(SDLInfo.getWindowRenderer().getRenderer(), info, textBGGenerator);
 					#else
 					textRenderer.updateResolution(SDLInfo.getScreenSurface(), info, textBGGenerator);
 					#endif

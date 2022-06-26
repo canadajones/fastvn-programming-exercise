@@ -62,6 +62,12 @@ struct PositionedArea {
 	AbsolutePosition position;
 };
 
+struct RelativeArea {
+	public:
+	RelativeDimensions dimensions;
+	PositionMapping position;
+};
+
 struct Colour {
 	public:
 	int red;
