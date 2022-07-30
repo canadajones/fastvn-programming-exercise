@@ -17,8 +17,6 @@ module;
 
 export module SFMLRendering;
 
-
-
 export namespace trees {
 	class OrderNode {
 	public:
@@ -46,7 +44,7 @@ export namespace trees {
 			}
 		}
 		return std::nullopt;
-	};
+	}
 
 	std::optional<std::reference_wrapper<const OrderNode>> bfs(const OrderNode& node, std::string_view id, ApplyFunction f = [](auto) {}) {
 		std::queue<std::reference_wrapper<const OrderNode>> q{};
@@ -66,7 +64,7 @@ export namespace trees {
 			}
 		}
 		return std::nullopt;
-	};
+	}
 	
 	std::string prettifyTree(OrderNode& root) {
 		std::string retval{""};
@@ -143,7 +141,7 @@ export namespace trees {
 				}
 				curId = m.at(curId);
 			}
-			auto reversedLineage = lineage | std::views::reverse;
+			auto reversedLineage = r_wrap(lineage);
 			lineages.emplace_back(reversedLineage.begin(), reversedLineage.end());
 		}
 
@@ -155,7 +153,7 @@ export namespace trees {
 	}
 	
 }
-using RenderFunc = std::function<void(sf::RenderTarget& target)>;
+using SFMLRenderFunc = std::function<void(sf::RenderTarget& target)>;
 
 class Order {
 	public:
@@ -177,6 +175,7 @@ class Order {
 
 export namespace vnpge {
 
+template<typename RenderFunc>
 class CompositorArea {
 	public:
 	RelativeArea area;
@@ -192,27 +191,39 @@ class CompositorArea {
 class SFMLCompositorArea {
 	private:
 	sf::RenderTexture target;
+	sf::Sprite sprite;
 	std::string foreignId;
 
-	CompositorArea area;
+	CompositorArea<SFMLRenderFunc> area;
 
 	public:
 
-	SFMLCompositorArea(const CompositorArea& area, std::string_view fId) : area{ area }, foreignId{fId} {};
+	SFMLCompositorArea(const CompositorArea<SFMLRenderFunc>& area, std::string_view fId) : foreignId{fId}, area{ area } {
+
+		area.renderToTarget(target);
+		sprite.setTexture(target.getTexture());
+	};
 
 	SFMLCompositorArea(SFMLCompositorArea&& a) : area{ a.area } {}
 	
 	SFMLCompositorArea(const SFMLCompositorArea&) = delete;
 
+	bool shouldRender() const {
+		return area.shouldRender();
+	}
+	
 	void render() {
-		if (area.shouldRender()) {
-			area.renderToTarget(target);
-		}
+		area.renderToTarget(target);
 	};
+	
 
 	std::string_view getForeignId() const {
 		return foreignId;
 	};
+
+	const sf::Sprite& getSprite() const {
+		return sprite;
+	}
 };
 
 
@@ -228,7 +239,7 @@ class SFMLCompositor {
 
 	SFMLCompositor() {};
 
-	void addArea(std::string_view id, std::string_view foreignId, const CompositorArea& area) {
+	void addArea(std::string_view id, std::string_view foreignId, const CompositorArea<SFMLRenderFunc>& area) {
 		areas.emplace(std::piecewise_construct, std::forward_as_tuple(id), std::forward_as_tuple(area, foreignId));
 		computeOrder();
 	};
@@ -251,11 +262,29 @@ class SFMLCompositor {
 		bfs(root, "", [&orderRef](const trees::OrderNode& n) {orderRef.push_back(n.id);});
 	}
 
+	void render(sf::RenderTarget& dest) {
+		for (auto& area : areas) {
+			if (area.second.shouldRender()) {
+				area.second.render();
+			}
+		}
+
+		for (auto& id : order) {
+			// ugly hack; there should be a workaround for this, but making it work first is top priority
+			dest.draw((*areas.find(std::string{id})).second.getSprite());
+		}
+
+
+	}
 
 };
 
 class SFMLWindow {
 	sf::RenderWindow window;
+	
+	SFMLWindow() : window{sf::VideoMode(800, 600), "test1"} {
+
+	}
 };
 
 }
