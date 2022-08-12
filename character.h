@@ -1,3 +1,6 @@
+#ifndef VNPGE_STORY_CHARACTER_HEADER
+#define VNPGE_STORY_CHARACTER_HEADER
+
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -26,8 +29,7 @@ struct MetaCharacter {
 		 * @param metaExpressions An unordered map between expression codes and image paths.
 		 * @param id A string uniquely identifying this (Meta)Character. Is used to link to (Meta)Frames.
 		 */
-		MetaCharacter(std::string characterName, const std::unordered_map<std::string, std::string>& metaExpressions, std::string id ) 
-		: id(id), name{characterName}, metaExpressions{metaExpressions} {};
+		MetaCharacter(std::string characterName, const std::unordered_map<std::string, std::string>& metaExpressions, std::string id );
 
 
 		MetaCharacter() = delete;
@@ -53,11 +55,8 @@ class Character {
 	 * 
 	 * @param metaCharacter The MetaCharacter template from which the name and expressions will be drawn
 	 */
-		Character(const MetaCharacter& metaCharacter) : id{metaCharacter.id}, name{metaCharacter.name} {
-			for (auto& metaExpression : metaCharacter.metaExpressions) {
-				expressions.insert({metaExpression.first,{metaExpression.second}});
-			}
-		};
+		Character(const MetaCharacter& metaCharacter);
 		Character() = delete;
 };
 };
+#endif 

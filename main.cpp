@@ -15,24 +15,27 @@
 #include <cassert>
 #include <cmath>
 
-#include <SDL2/SDL_pixels.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_timer.h>
 
-#include "video-sdl-common.h"
+#include "video-sfml.h"
+#include "video-sfml-compositor.h"
+
+
+#include "compositor.h"
 
 #include "structures.h"
 #include "schedule.h"
 
+#include "image.h"
+#include "chapter.h"
+#include "json-loader.h"
+
 #include "debug.h"
 
 
-import Image;
-import Chapter;
-import JSONLoader;
+
 
 #define GPU_RENDER 
-
+/*
 #ifdef GPU_RENDER
 import AcceleratedText;
 import AcceleratedRender;
@@ -42,7 +45,7 @@ import SoftwareRender;
 #endif
 
 import SFMLRendering;
-
+*/
 
 using std::cout; //NOLINT(misc-unused-using-decls)
 using std::cin;  //NOLINT(misc-unused-using-decls)
@@ -55,56 +58,11 @@ typedef unsigned int uint;
 
 
 
-std::pair<SDL_Surface*, PositionedArea> textBGGenerator(AbsoluteDimensions screenSize, RelativeDimensions bgArea) {
-	const int borderThickness = 4;
-	const int padding = 10;
-	
-	// Default simple text box
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w * bgArea.w, screenSize.h * bgArea.h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	#else
-		SDL_Surface* textBoxSurface = SDL_CreateRGBSurface(0, screenSize.w * bgArea.w, screenSize.h * bgArea.h, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	#endif
-
-	if (textBoxSurface == nullptr) {
-		std::string err = "Surface could not be created! SDL_Error: ";
-		throw std::runtime_error(err.append(SDL_GetError()));
-	}
-
-	SDL_Rect textBox = {
-		.x = 0,
-		.y = 0,
-		.w = textBoxSurface->w,
-		.h = textBoxSurface->h
-	};
-
-	// Fill with a transparent white
-	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0xFF, 0xFF, 0xFF, 0x7F));
-
-	
-	textBox.x += borderThickness;
-	textBox.y += borderThickness;
-	textBox.w -= borderThickness * 2;
-	textBox.h -= borderThickness * 2;
-
-	// Fill with a transparent black inside the other rectangle, thereby creating a white border
-	// Note that FillRect does not blend alphas, so this alpha replaces the white's
-	// This is actually desirable, since the colours should have different alphas in order to feel equally transparent
-	SDL_FillRect(textBoxSurface, &textBox, SDL_MapRGBA(textBoxSurface->format, 0x30, 0x30, 0x30, 0xAF));
-
-	return {
-		textBoxSurface, {
-			.area		= { 
-							.w = static_cast<uint>(textBox.w) - 2 * padding,
-							.h = static_cast<uint>(textBox.h) - 2 * padding},
-			.position =	  {	.x = borderThickness + padding, 
-							.y = borderThickness + padding}
-		}
-	};
-}
 
 
 int main() {
+	
+	return 0;
 	
 	SFMLCompositor c;
 	CompositorArea a{ {.dimensions = {  .w = 0.5,
@@ -125,14 +83,11 @@ int main() {
 
 	c.computeOrder();
 
-	SDL_Delay(5000);
-	return 0;
+	
+	//return 0;
 
-	#ifdef GPU_RENDER
-	GPURenderManager SDLInfo{};
-	#else
-	SWRenderManager SDLInfo{};
-	#endif
+
+	SFMLWindow window;
 	
 	
 	TextBoxInfo boxInfo = { SDLInfo.getScreenDimensions(), {.w = 1.0, .h = 0.25} };
@@ -147,6 +102,7 @@ int main() {
 
 	// Load chapter data
 	JSONLoader loader = {"assets/scripts/index.json"};
+	
 	Chapter chapter = loader.loadChapter();
 
 

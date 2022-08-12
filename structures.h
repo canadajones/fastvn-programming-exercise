@@ -1,7 +1,6 @@
 #ifndef STRUCTURES_HEADER 
 #define STRUCTURES_HEADER
 
-#include <iostream>
 
 namespace vnpge {
 	using uint = unsigned int;

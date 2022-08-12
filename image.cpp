@@ -1,9 +1,8 @@
-module;
+
 #include <string>
 
-export module Image;
 
-export namespace vnpge {
+namespace vnpge {
 class Image {
 	public:
 	std::string path;

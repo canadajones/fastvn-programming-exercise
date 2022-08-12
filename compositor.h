@@ -1,6 +1,5 @@
 #ifndef VNPGE_COMPOSITOR_HEADER
 #define VNPGE_COMPOSITOR_HEADER
-
 #include <functional>
 
 #include "structures.h"
@@ -17,10 +16,8 @@ class CompositorArea {
 
 	RenderFunc renderToTarget;
 
-	CompositorArea(const RelativeArea& area, std::function<bool()> shouldRender, RenderFunc render) :
-		 area{area}, shouldRender{shouldRender}, renderToTarget{render} {};
+	CompositorArea(const RelativeArea& area, std::function<bool()> shouldRender, RenderFunc render);
 };
 
 }
-
 #endif

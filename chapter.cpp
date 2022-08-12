@@ -1,4 +1,4 @@
-module;
+
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -6,13 +6,11 @@ module;
 
 #include "structures.h"
 
-export module Chapter;
-
-import Image;
-import StoryCharacter;
+#include "image.h"
+#include "character.h"
 
 
-export namespace vnpge {
+namespace vnpge {
 
 /**
  * @brief Template for creating Frames.
@@ -90,7 +88,7 @@ class Chapter {
 		std::vector<Frame> storyFrames;
 		std::vector<Image> backgrounds;
 
-		typename std::vector<Frame>::iterator curFrame;
+		std::vector<Frame>::iterator curFrame;
 	public:
 		Chapter(std::string name, const std::vector<MetaCharacter>& metaCharacters, const std::vector<MetaFrame> metaFrames) 
 		: chapterName{name}, storyCharacters{demetaCharacterVec(metaCharacters)} {
@@ -100,7 +98,7 @@ class Chapter {
 			std::unordered_map<std::string, Image&> bgPathtoImageMap;
 			
 			{
-				typename std::vector<Character>::iterator it1 = storyCharacters.begin();
+				std::vector<Character>::iterator it1 = storyCharacters.begin();
 				for (auto& metaChar : metaCharacters) {
 					charIDToRefMap.insert({metaChar.id, *it1});
 					it1 = std::next(it1);
@@ -146,10 +144,6 @@ class Chapter {
 		}
 		return curFrame;
 	}
-	/*AbsoluteDimensions updateResolution(AbsoluteDimensions surfDimensions, TextBoxCreator boxGenerator) {
-		AbsoluteDimensions newDims = textBox.updateResolution(surfDimensions, boxGenerator);
-		//textBox.generateDisplayText(curFrame->textDialogue);
-		return newDims;
-	};*/
+	
 };
 };

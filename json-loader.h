@@ -1,3 +1,6 @@
+#ifndef VNPGE_JSON_LOADER_HEADER
+#define VNPGE_JSON_LOADER_HEADER
+
 #include <boost/json/src.hpp>
 #include <filesystem>
 
@@ -127,3 +130,4 @@ class JSONLoader : ChapterLoader {
 	}
 };
 }
+#endif

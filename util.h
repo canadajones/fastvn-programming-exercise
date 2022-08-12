@@ -1,8 +1,10 @@
 #ifndef VNPGE_UTILITY_HEADER
 #define VNPGE_UTILITY_HEADER
+#include <concepts>
+#include <iterator>
+#include <ranges>
 
-
-template <typename C>
+template <std::ranges::bidirectional_range C>
 struct reverse_wrapper {
 
     C& c_;
@@ -17,4 +19,6 @@ template <typename C>
 reverse_wrapper<C> r_wrap(C& c) {
     return reverse_wrapper<C>(c);
 }
+
+
 #endif
