@@ -8,6 +8,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "compositor.h"
+#include "structures.h"
 #include "trees.h"
 #include "video-sfml.h"
 
@@ -22,13 +23,13 @@ class SFMLCompositorArea {
 
 	public:
 
-	SFMLCompositorArea(const CompositorArea<SFMLRenderFunc>& area, std::string_view fId);
+	SFMLCompositorArea(const CompositorArea<SFMLRenderFunc>& area, std::string_view fId, AbsoluteDimensions targetPixelDims);
 
 	SFMLCompositorArea(SFMLCompositorArea&& a);
 	
 	SFMLCompositorArea(const SFMLCompositorArea&) = delete;
 
-	bool shouldRender();
+	bool shouldRender() const;
 	
 	void render();
 	
@@ -42,13 +43,17 @@ class SFMLCompositorArea {
 class SFMLCompositor {
 	private:
 	std::unordered_map<std::string, SFMLCompositorArea> areas;
+
+	// todo: fix this mess
+	AbsoluteDimensions targetPixelDims;
 	
-	std::vector<std::string_view> order;
+	public:
+	std::vector<std::string> order;
 
 	
 	public:
 
-	SFMLCompositor() = default;
+	SFMLCompositor(AbsoluteDimensions size) : targetPixelDims{size} {};
 
 	void addArea(std::string_view id, std::string_view foreignId, const CompositorArea<SFMLRenderFunc>& area);
 

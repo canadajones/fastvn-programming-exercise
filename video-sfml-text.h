@@ -28,8 +28,15 @@ class SFMLFont {
 	sf::Font font;
 	
 	public:
-	SFMLFont(const std::string& fontPath);
-	const sf::Font& getFont() const;
+	SFMLFont(const std::string& fontPath) : fontName{fontPath} {
+		if (!font.loadFromFile(fontPath)) {
+			std::string err = "Error: Font could not be loaded. Missing font file path: ";
+			throw std::runtime_error(err.append(fontPath));
+		}
+	}
+	const sf::Font& getFont() const {
+		return font;
+	}
 };
 
 
@@ -41,8 +48,14 @@ class SFMLFontStorage {
 	public:
 	SFMLFontStorage() = default;
 	
-	const sf::Font& operator()(const std::string& fontName);
+	const sf::Font& operator()(const std::string& fontName) {
+		if (!map.contains(fontName)) {
+			map.insert({fontName, SFMLFont{fontName}});
+		}
+		return map.at(fontName).getFont();
+	}
 };
+
 
 
 class TextBox {
@@ -59,7 +72,7 @@ class TextBox {
 
 	std::function<PositionedArea(sf::RenderTarget&)> createTextBG;
 	public:
-	TextBox(const std::string& dialogue, const std::string& fontName, std::function<PositionedArea(sf::RenderTarget&)> createTextBG);
+	TextBox(const std::string& dialogue, const std::string& fontName, std::pair<uint, uint> size, std::function<PositionedArea(sf::RenderTarget&)> createTextBG);
 
 	void render(sf::RenderTarget& target);
 

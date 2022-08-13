@@ -24,12 +24,12 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
 add_executable(test1 testmain.cpp)
 
-target_sources(test1 PUBLIC video-sfml.cpp video-sfml-text.cpp video-sfml-compositor.cpp compositor.cpp trees.cpp)
+target_sources(test1 PUBLIC video-sfml-text.cpp video-sfml-compositor.cpp trees.cpp)
 
 # this needs improvement
 target_include_directories(test1 PUBLIC ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(test1 PUBLIC sfml-system sfml-graphics sfml-audio)
+target_link_libraries(test1 PUBLIC sfml-system sfml-window sfml-graphics sfml-audio)
 
 # Those sweet, sweet designated initialisers force me to use C++20
 set_property(TARGET test1 PROPERTY CXX_STANDARD 20)

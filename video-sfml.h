@@ -19,7 +19,15 @@
 #include "util.h"
 
 
-using SFMLRenderFunc = std::function<void(sf::RenderTarget&)>;
+using SFMLRenderFunc = std::function<void(sf::RenderTarget& target)>;
+
+
+
+
+// TODO: clarify the role of the SFMLCompositorArea such that its ownership of dimensions (relative or otherwise) make sense
+// Does it belong to the compositor, or the rendering party?
+// One should only know the dimensions its rendering, while the other needs to know proportions and absolute sizes.
+
 
 
 
@@ -30,9 +38,11 @@ class SFMLWindow {
 	sf::RenderWindow window;
 	
 	public:
-	SFMLWindow(){}
+	SFMLWindow() : window{sf::VideoMode(800, 600), "test1"} {};
 
-	sf::RenderWindow& getWindow();
+	sf::RenderWindow& getWindow() {
+		return window;
+	}
 };
 
 }

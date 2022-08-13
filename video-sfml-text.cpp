@@ -17,59 +17,14 @@
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics.hpp>
 
+#include "video-sfml-text.h"
 
 namespace vnpge {
-class SFMLFont {
-	private:
-	std::string fontName;
-	sf::Font font;
-	
-	public:
-	SFMLFont(const std::string& fontPath) : fontName{fontPath} {
-		if (!font.loadFromFile(fontPath)) {
-			std::string err = "Error: Font could not be loaded. Missing font file path: ";
-			throw std::runtime_error(err.append(fontPath));
-		}
-	}
-	const sf::Font& getFont() const {
-		return font;
-	}
-};
 
 
+	TextBox::TextBox(const std::string& dialogue, const std::string& fontName, std::pair<uint, uint> size, std::function<PositionedArea(sf::RenderTarget&)> createTextBG) {
+		background.create(size.first, size.second);
 
-class SFMLFontStorage {
-	private:
-	std::unordered_map<std::string, SFMLFont> map;
-
-	public:
-	SFMLFontStorage() = default;
-	
-	const sf::Font& operator()(const std::string& fontName) {
-		if (!map.contains(fontName)) {
-			map.insert({fontName, SFMLFont{fontName}});
-		}
-		return map.at(fontName).getFont();
-	}
-};
-
-
-class TextBox {
-	private:
-	SFMLFontStorage fontStorage;
-
-	sf::Text text;
-
-	sf::RenderTexture background;
-	sf::Sprite bgSprite;
-
-	
-	PositionedArea validTextSpace;
-
-	std::function<PositionedArea(sf::RenderTarget&)> createTextBG;
-	public:
-	TextBox(const std::string& dialogue, const std::string& fontName, std::function<PositionedArea(sf::RenderTarget&)> createTextBG) {
-		
 		text.setFont(fontStorage(fontName));
 		text.setStyle(sf::Text::Regular);
 		
@@ -88,7 +43,7 @@ class TextBox {
 		bgSprite.setTexture(background.getTexture());
 	}
 
-	void render(sf::RenderTarget& target) {
+	void TextBox::render(sf::RenderTarget& target) {
 
 		target.draw(bgSprite);
 		target.draw(text);
@@ -97,11 +52,9 @@ class TextBox {
 
 
 	
-	void setWrappedString(const std::string& dialogueString) {
-		
-		
-		std::vector<uint> spacePositions;
+	void TextBox::setWrappedString(const std::string& dialogueString) {
 
+		std::vector<uint> spacePositions;
 		
 		for (auto it = dialogueString.begin(); it != dialogueString.end(); it++) {
 			if (*it == ' ') {
@@ -123,8 +76,4 @@ class TextBox {
 			}
 		}
 	}
-};
-
-
 }
-
