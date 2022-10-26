@@ -6,6 +6,7 @@
 #include <SFML/Graphics/Drawable.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <algorithm>
 #include <cstddef>
@@ -64,6 +65,7 @@ class TextBox {
 
 	sf::Text text;
 
+	public:
 	sf::RenderTexture background;
 	sf::Sprite bgSprite;
 

@@ -18,10 +18,11 @@ class SFMLCompositorArea {
 	sf::RenderTexture target;
 	sf::Sprite sprite;
 	std::string foreignId;
-
+	
+	public:
 	CompositorArea<SFMLRenderFunc> area;
 
-	public:
+	
 
 	SFMLCompositorArea(const CompositorArea<SFMLRenderFunc>& area, std::string_view fId, AbsoluteDimensions targetPixelDims);
 

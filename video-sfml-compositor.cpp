@@ -1,10 +1,11 @@
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/Graphics/View.hpp>
 #include <vector>
 #include <unordered_map>
 #include <string>
 
 
 
-#include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
 #include "compositor.h"
@@ -21,6 +22,7 @@ namespace vnpge {
 
 		target.create(area.area.dimensions.w * targetPixelDims.w, area.area.dimensions.h * targetPixelDims.h);
 		area.renderToTarget(target);
+		target.display();
 		sprite.setTexture(target.getTexture());
 	};
 
@@ -34,6 +36,7 @@ namespace vnpge {
 	
 	void SFMLCompositorArea::render() {
 		area.renderToTarget(target);
+		target.display();
 	};
 	
 
@@ -81,9 +84,31 @@ namespace vnpge {
 			// ugly hack; there should be a workaround for this, but making it work first is top priority
 
 			if (id != "vnpge::ui") {
-				dest.draw((*areas.find(id)).second.getSprite());
+				auto& area = areas.find(id)->second;
+				auto rectSize = area.getSprite().getTextureRect();
+				sf::FloatRect r = {static_cast<float>(rectSize.left), static_cast<float>(rectSize.top), static_cast<float>(rectSize.width), static_cast<float>(rectSize.height)};
+				
+				sf::View view{r};
+
+				auto getPos = [](RelativeArea relPos){
+					
+					auto x_k = relPos.position.destPos.x - (relPos.position.srcPos.x * relPos.dimensions.w);
+					auto y_k = relPos.position.destPos.y - (relPos.position.srcPos.y * relPos.dimensions.h);
+					return std::pair{x_k, y_k};
+				};
+
+				auto p = getPos(area.area.area);
+				
+				// 							x, y, w, h			
+				auto a = sf::FloatRect(p.first, p.second, area.area.area.dimensions.w, area.area.area.dimensions.h);
+				
+				view.setViewport(a);
+
+				dest.setView(view);
+				dest.draw(area.getSprite());
+				dest.setView(dest.getDefaultView());
 			}
 		}
+		
 	}
-	
 };

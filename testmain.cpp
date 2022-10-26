@@ -12,28 +12,35 @@
 
 #include "debug.h"
 
+#include <SFML/Graphics/BlendMode.hpp>
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
-#include <unistd.h>
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/Transform.hpp>
+#include <SFML/System/Vector2.hpp>
+
 
 using namespace vnpge;
 
 PositionedArea createTextBG(sf::RenderTarget& rt) {
 	auto size = rt.getSize();
 
-	std::cout << size.x << " , " << size.y << std::endl;
-	
-	sf::RectangleShape rectangle(sf::Vector2f(size.x, size.y));
+	sf::RectangleShape rectangle(sf::Vector2f(size.x-8, size.y-8));
 
 	rectangle.setFillColor(sf::Color(0, 0, 0, 70));
 	rectangle.setOutlineColor(sf::Color(255, 255, 255, 130));
-	rectangle.setOutlineThickness(2);
-	rt.draw(rectangle);
+
+	rectangle.setOutlineThickness(4);
+
+	rt.draw(rectangle, sf::RenderStates(sf::BlendNone, sf::Transform().translate(4, 4), nullptr, nullptr));
 
 	return PositionedArea{ 
-						.area     { .w = size.x - 8, 
-									.h = size.x - 8
+						.area     { .w = size.x - 16, 
+									.h = size.x - 16
 								  },
 						.position { .x = 8,
 									.y = 8
@@ -43,34 +50,60 @@ PositionedArea createTextBG(sf::RenderTarget& rt) {
 
 int main() {
 
+	// Construct window
 	SFMLWindow window;
+	
 	auto windowSize = window.getWindow().getSize();
 	
 	auto& sfWindow = window.getWindow();
 	
-	TextBox tb = {"sjomplern komplern stomplern", "assets/fonts/BonaNova-Italic.ttf", {window.getWindow().getSize().x, window.getWindow().getSize().x}, createTextBG};
 
-	CompositorArea<SFMLRenderFunc> a{ {.dimensions = {  .w = 1.0,
-										.h = 0.3 },
-						.position = {.srcPos =  {.x = 0.5,
-												 .y = 1.0 },
-									 .destPos = {.x = 0.5,
-												 .y = 1.0 }
-									}
-					  },
-	[]{return true; }, [&tb](sf::RenderTarget& renderTarget) {
-		tb.render(renderTarget);
-	}};
+	// Create textbox
+	// TODO: delete or move this elsewhere
+	TextBox tb = {"This is a test", "assets/fonts/BonaNova-Italic.ttf", {windowSize.x, windowSize.y / 3}, createTextBG};
 
-	SFMLCompositor c { {.w = windowSize.x, .h = windowSize.y}};
-	c.addArea("text", "vnpge::ui", a);
+	// 
+	CompositorArea<SFMLRenderFunc> textBoxCompArea{ {  .dimensions = {  .w = 1.0,
+																			  .h = 1.0/3.0 },
+															.position	= {	.srcPos  = {.x = 0.5,
+																					    .y = 0.5 },
+																		  	.destPos = {.x = 0.5,
+																						.y = 0.5 }
+																		}
+														},
+									  []	 ()								  {return true; }, 
+										  	[&tb](sf::RenderTarget& renderTarget) {tb.render(renderTarget);}
+												};
 
+	
+	// Create compositor	
+	SFMLCompositor compositor { {.w = windowSize.x, .h = windowSize.y}};
 
+	compositor.addArea("text", "vnpge::ui", textBoxCompArea);
+
+	SFMLCompositorArea sfTBCompArea = {textBoxCompArea, "vnpge::ui", {2, 4}};
+
+	// Print out size of window
 	std::cout << windowSize.x << " , " << windowSize.y << std::endl;
 
 
+	// DEBUG:
+	// Test texture, to test texture copying
+	sf::RenderTexture texture;
+	texture.create(800, 200);	
+	texture.clear(sf::Color(255, 255, 255, 0));
+	
+	// Sprite belonging to test texture
+	sf::Sprite sprite;
+	sprite.setPosition(0, 350);
+	sprite.setTexture(texture.getTexture());
+
+	
  	while (sfWindow.isOpen()) {
-		sfWindow.clear(sf::Color(255, 255, 255, 255));
+	
+		
+		sfWindow.clear(sf::Color(70, 65, 140, 255));
+		
 		
 		// check all the window's events that were triggered since the last iteration of the loop
 		sf::Event event;
@@ -81,15 +114,12 @@ int main() {
 				sfWindow.close();
 		}
 		
-		// render stuff
-		c.render(sfWindow);
-		
-		//tb.render(sfWindow);
 
-		window.getWindow().display();
-
+		// Draw composite output to window
 		
+		compositor.render(sfWindow);
+
+
+		window.getWindow().display();	
 	}
-	
-
 }

@@ -1,7 +1,10 @@
+#include <SFML/Graphics/BlendMode.hpp>
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Drawable.hpp>
+#include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <algorithm>
 #include <cstddef>
@@ -25,6 +28,8 @@ namespace vnpge {
 	TextBox::TextBox(const std::string& dialogue, const std::string& fontName, std::pair<uint, uint> size, std::function<PositionedArea(sf::RenderTarget&)> createTextBG) {
 		background.create(size.first, size.second);
 
+		std::cout << background.getSize().x << std::endl;
+
 		text.setFont(fontStorage(fontName));
 		text.setStyle(sf::Text::Regular);
 		
@@ -35,7 +40,10 @@ namespace vnpge {
 		text.setFillColor(sf::Color(255, 255, 255, 255));
 		
 		auto area = createTextBG(background);
+		background.display();
 		
+		
+
 		text.setPosition(area.position.x, area.position.y);
 		
 		setWrappedString(dialogue);
@@ -45,7 +53,7 @@ namespace vnpge {
 
 	void TextBox::render(sf::RenderTarget& target) {
 
-		target.draw(bgSprite);
+		target.draw(bgSprite, sf::RenderStates(sf::BlendNone));
 		target.draw(text);
 
 	}
