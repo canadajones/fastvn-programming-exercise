@@ -1,3 +1,4 @@
+#include <SFML/Graphics/RenderTarget.hpp>
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -15,25 +16,26 @@
 namespace vnpge {
 class SFMLCompositorArea {
 	private:
+	RelativeArea area;
+
 	sf::RenderTexture target;
 	sf::Sprite sprite;
+	
 	std::string foreignId;
 	
 	public:
-	CompositorArea<SFMLRenderFunc> area;
 
+	std::function<bool()> shouldRender;
+
+	std::function<void(sf::RenderTarget&)> renderToTarget;
+	SFMLCompositorArea(const RelativeArea& area, std::function<bool()> shouldRender, std::function<void(sf::RenderTarget&)> render) :
+		 area{area}, shouldRender{shouldRender}, renderToTarget{render} {};
 	
-
 	SFMLCompositorArea(const CompositorArea<SFMLRenderFunc>& area, std::string_view fId, AbsoluteDimensions targetPixelDims);
 
 	SFMLCompositorArea(SFMLCompositorArea&& a);
 	
 	SFMLCompositorArea(const SFMLCompositorArea&) = delete;
-
-	bool shouldRender() const;
-	
-	void render();
-	
 
 	std::string_view getForeignId() const;
 

@@ -48,6 +48,12 @@ PositionedArea createTextBG(sf::RenderTarget& rt) {
 						};
 }
 
+
+template <typename... Args>
+void print(Args&&... args) {
+	(std::cout <<  ... << args) << std::endl;
+}
+
 int main() {
 
 	// Construct window
@@ -60,15 +66,17 @@ int main() {
 
 	// Create textbox
 	// TODO: delete or move this elsewhere
-	TextBox tb = {"This is a test", "assets/fonts/BonaNova-Italic.ttf", {windowSize.x, windowSize.y / 3}, createTextBG};
+	TextBox tb = {"sjomplern komplern stomplern", "assets/fonts/BonaNova-Italic.ttf", {windowSize.x, windowSize.y / 3}, createTextBG};
 
-	// 
+
+
+
 	CompositorArea<SFMLRenderFunc> textBoxCompArea{ {  .dimensions = {  .w = 1.0,
 																			  .h = 1.0/3.0 },
 															.position	= {	.srcPos  = {.x = 0.5,
 																					    .y = 0.5 },
 																		  	.destPos = {.x = 0.5,
-																						.y = 0.5 }
+																						.y = 0.75 }
 																		}
 														},
 									  []	 ()								  {return true; }, 
@@ -79,24 +87,17 @@ int main() {
 	// Create compositor	
 	SFMLCompositor compositor { {.w = windowSize.x, .h = windowSize.y}};
 
+
 	compositor.addArea("text", "vnpge::ui", textBoxCompArea);
 
-	SFMLCompositorArea sfTBCompArea = {textBoxCompArea, "vnpge::ui", {2, 4}};
+
+
+
+
 
 	// Print out size of window
-	std::cout << windowSize.x << " , " << windowSize.y << std::endl;
+	print("x: ", windowSize.x, ", y: ", windowSize.y);
 
-
-	// DEBUG:
-	// Test texture, to test texture copying
-	sf::RenderTexture texture;
-	texture.create(800, 200);	
-	texture.clear(sf::Color(255, 255, 255, 0));
-	
-	// Sprite belonging to test texture
-	sf::Sprite sprite;
-	sprite.setPosition(0, 350);
-	sprite.setTexture(texture.getTexture());
 
 	
  	while (sfWindow.isOpen()) {

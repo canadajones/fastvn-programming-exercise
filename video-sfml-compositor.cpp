@@ -83,6 +83,8 @@ namespace vnpge {
 		for (auto& id : order) {
 			// ugly hack; there should be a workaround for this, but making it work first is top priority
 
+			// todo: clean up
+			// todo: support arbitrary root elements
 			if (id != "vnpge::ui") {
 				auto& area = areas.find(id)->second;
 				auto rectSize = area.getSprite().getTextureRect();
