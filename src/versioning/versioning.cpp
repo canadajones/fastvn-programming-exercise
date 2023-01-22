@@ -62,9 +62,7 @@ namespace feature_versioning {
                 return VersionComparisonResult::identical;
             }
         };
-    }
 
-    namespace detail {
         VersionComparisonResult default_version_comparator(std::string_view ns, std::string_view expected_version, std::string_view provided_version) {
             if (ns == "semver") {
                 return default_comparisons::semver_comp(expected_version, provided_version);
@@ -79,7 +77,7 @@ namespace feature_versioning {
      * 
      * @tparam Type of comparator function, accepting namespace, expected version string and provided version string (all string_views)
      */
-    template <typename VersionComparator = decltype(detail::default_version_comparator)*> requires requires (VersionComparator vc, std::string_view sv) {{vc(sv, sv, sv)} -> std::same_as<VersionComparisonResult>;}
+    template <typename VersionComparator> requires requires (VersionComparator vc, std::string_view sv) {{vc(sv, sv, sv)} -> std::same_as<VersionComparisonResult>;}
     class Feature {
         std::string ns;
         std::string feature_name;
@@ -95,7 +93,7 @@ namespace feature_versioning {
          * @param vc Function vc(namespace, required, provided) that correctly compares the version any two features in a given namespace.
          * @param delimiter Delimiter between feature string fields. Defaults to "::".
          */
-        explicit Feature(std::string_view feature_string, VersionComparator vc = detail::default_version_comparator, std::string_view delimiter = "::") : comparator{vc} {
+        explicit Feature(std::string_view feature_string, VersionComparator vc, std::string_view delimiter = "::") : comparator{vc} {
 
             // example feature_string = namespace::feature_name::v1.0
 
@@ -137,11 +135,3 @@ namespace feature_versioning {
     };
 
 };
-
-int main() {
-
-    feature_versioning::Feature required{"semver::common::v1.3.5"};
-    feature_versioning::Feature provided{"semver::common::v1.3.7"};
-
-    std::cout << std::boolalpha << required.isSatisfiedBy(provided) << std::endl;
-}

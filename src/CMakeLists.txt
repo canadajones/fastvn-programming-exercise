@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.13.0)
 project(test1-vn VERSION 0.1.0 LANGUAGES CXX)
 
 
-set(BOOST_ROOT ../boost_1_79_0/)
+set(BOOST_ROOT ../boost_1_81_0/)
 #set(Boost_USE_STATIC_LIBS OFF) 
 #set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME ON) 
-find_package(Boost 1.79.0) 
+find_package(Boost 1.81.0) 
 
 cmake_policy(SET CMP0076 NEW)
 
