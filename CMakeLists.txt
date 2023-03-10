@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13.0)
 project(test1-vn VERSION 0.1.0 LANGUAGES CXX)
 
 
-set(BOOST_ROOT ../boost_1_81_0/)
+set(BOOST_ROOT ./boost_1_81_0/)
 #set(Boost_USE_STATIC_LIBS OFF) 
 #set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME ON) 
@@ -20,7 +20,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 
-add_executable(versiontest versioning/versioning.cpp)
+add_executable(versiontest src/versioning/versioning.cpp)
 
 
 
