@@ -2,10 +2,14 @@ cmake_minimum_required(VERSION 3.13.0)
 project(test1-vn VERSION 0.1.0 LANGUAGES CXX)
 
 
-set(BOOST_ROOT ./boost_1_81_0/)
-#set(Boost_USE_STATIC_LIBS OFF) 
+set(BOOST_ROOT ./extern/boost_1_81_0/)
+set(Boost_USE_STATIC_LIBS OFF) 
 #set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME ON) 
+
+set(BOOST_ENABLE_CMAKE ON)
+
+
 find_package(Boost 1.81.0) 
 
 cmake_policy(SET CMP0076 NEW)
@@ -20,20 +24,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 
-add_executable(versiontest src/versioning/versioning.cpp)
+add_executable(parsertest src/parser/parser.cpp)
 
 
 
 # this needs improvement
-target_include_directories(versiontest PUBLIC ${Boost_INCLUDE_DIRS})
+target_include_directories(parsertest PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(versiontest PUBLIC sfml-system sfml-window sfml-graphics sfml-audio)
+target_link_libraries(parsertest PUBLIC sfml-system sfml-window sfml-graphics sfml-audio)
 
 # Those sweet, sweet designated initialisers force me to use C++20
-set_property(TARGET versiontest PROPERTY CXX_STANDARD 20)
-set_property(TARGET versiontest PROPERTY CXX_EXTENSIONS OFF)
-set_property(TARGET versiontest PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET parsertest PROPERTY CXX_STANDARD 20)
+set_property(TARGET parsertest PROPERTY CXX_EXTENSIONS OFF)
+set_property(TARGET parsertest PROPERTY CXX_STANDARD_REQUIRED ON)
 
 if (CMAKE_COMPILER_IS_GNUCXX)
-	target_compile_options(versiontest PRIVATE -Wall -Wextra -Wno-unused-parameter -pthread -fmodules-ts)
+	target_compile_options(parsertest PRIVATE -Wfatal-errors -Wall -Wextra -Wno-unused-parameter -pthread -fmodules-ts)
 endif()

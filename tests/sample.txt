@@ -1,0 +1,23 @@
+script version 0.0.1;
+
+
+using vnpge
+
+location Park (vnpge.background = {image: "assets/bg/park.png", position: "centre", scale: "fill", nestedObj: {elem1: "fish", elem2: "soup"}})
+
+character Sara (vnpge.name = "Sara Pumpkins")
+character Mark (vnpge.name = "Mark Whatsit")
+
+scene Park_Conversation_04 (vnpge.location = Park, objev.event_enter="park_entered") #{
+
+    Sara, frustrated: "Man, I wish we got more time off. When was the last time we went to the park like this?"
+    Mark, contemplative: "Yeah, this blows. I hate having to run off just to get some fresh air."
+    Sara : "There has to be something we can do."
+    @: "It's not fair for us to take the fall for what *they* did."
+    @, determined: "That's it. I'm not keeping quiet any longer."
+    
+
+    scene_change(Park_Conversation_05)
+}#
+
+
