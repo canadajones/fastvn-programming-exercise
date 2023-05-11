@@ -12,6 +12,7 @@
 #include <boost/ref.hpp>
 #include <variant>
 
+#include "boost/spirit/home/qi/directive/as.hpp"
 #include "util/files.h"
 
 
@@ -163,8 +164,7 @@ struct script_tokens : lex::lexer<Lexer>
 
 
 
-// can't convert "Literal" to "Literal*"
-// make special class?
+
 
 
 
@@ -178,7 +178,6 @@ namespace script_elements {
 	
 	struct Array;
 	struct Object;
-
 
 	struct Literal {
 		boost::variant<double, std::string, boost::recursive_wrapper<Array>, boost::recursive_wrapper<Object>> contents;
@@ -238,7 +237,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 template <typename Iterator, typename Skipper>
 struct list_grammar : qi::grammar<Iterator, script_elements::List(), Skipper>
 {
-	template <typename TokenDef = script_tokens<lex::lexertl::lexer<>>>
+	template <typename TokenDef>
 	list_grammar(TokenDef const& tok)
 	  : list_grammar::base_type(list, "ListGrammar")
 	{	
@@ -248,12 +247,14 @@ struct list_grammar : qi::grammar<Iterator, script_elements::List(), Skipper>
 		list.name("List");
 		name.name("Name (identifier)");
 
-		literal %= tok.number | tok.quotedString | array | object;
-		//array %= tok.arrayBegin >> -(literal) >> *(tok.comma >> literal) >> tok.arrayEnd;
-		//object %= tok.objectBegin >> -(tok.identifier >> tok.objectSeparator >> literal) >> *(tok.comma >> tok.identifier >> tok.objectSeparator >> literal);
-		name %= tok.identifier | tok.namespacedIdentifier;
+		literal = tok.number | tok.quotedString | array | object;
+		
+		array = tok.arrayBegin >> -(literal) >> *(tok.comma >> literal) >> tok.arrayEnd;
+		object = tok.objectBegin >> -(tok.identifier >> tok.objectSeparator >> literal) >> *(tok.comma >> tok.identifier >> tok.objectSeparator >> literal);
+		name = tok.identifier | tok.namespacedIdentifier;
 
-		//list %= tok.listBegin >> -(name >> tok.equals >> literal) >> *(tok.comma >> name >> tok.equals >> literal) >> tok.listEnd;
+		list = tok.listBegin >> -(name >> tok.equals >> literal) >> *(tok.comma >> name >> tok.equals >> literal) >> tok.listEnd;
+		
 	}
 	qi::rule<Iterator, script_elements::Literal(), Skipper> literal;
 	qi::rule<Iterator, script_elements::List(), Skipper> list;
@@ -298,7 +299,10 @@ int main() {
 		return true;
 	});
 
-	using token_type = lex::lexertl::token<char const*, boost::mpl::vector<std::string>>;
+
+
+
+	using token_type = lex::lexertl::token<char const*, boost::mpl::vector<std::string, double>>;
 
   	using lexer_type = lex::lexertl::lexer<token_type>;
 
@@ -306,8 +310,11 @@ int main() {
 
 
 	script_tokens<lexer_type> script_lex;
+
 	list_grammar<iterator_type, decltype(script_lex.whitespace)> g (script_lex);
 	
+
+
 	first = &*contents.begin();
 	last = &*contents.end();		
 	
@@ -322,6 +329,7 @@ int main() {
 
 		std::cout << std::string{first, last} << std::endl;
 	}
-	
-	
+	struct s {
+		int y;
+	};
 }
