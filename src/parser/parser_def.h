@@ -42,8 +42,6 @@ namespace script
 
 		x3::rule<script_list_key_value_class, std::string> list_key_value = "list_key_value";
 
-		
-		
 		obj_type object = "object";
 		list_type list = "list";
 
