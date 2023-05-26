@@ -24,7 +24,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 
-add_executable(parsertest src/parser/parser.cpp)
+add_executable(parsertest tests/parser_verifier.cpp src/parser/parser.cpp)
 
 
 
