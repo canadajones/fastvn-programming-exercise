@@ -41,6 +41,7 @@ namespace script { namespace ast {
 	struct List {
 		std::unordered_map<std::string, Value> entries;
 	};
+	
 	using ObjectKeyVal = std::pair<std::string, Value>;
 
 	using ListKeyVal = std::pair<std::string, Value>;

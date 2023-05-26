@@ -29,7 +29,6 @@ namespace script
 		struct script_value_class;
 		struct script_array_class;
 		struct script_object_key_value_class;
-		struct script_list_identifier_class;
 		struct script_list_key_value_class;
 		
 
@@ -43,8 +42,9 @@ namespace script
 
 		x3::rule<script_list_key_value_class, std::string> list_key_value = "list_key_value";
 
+		
+		
 		obj_type object = "object";
-
 		list_type list = "list";
 
 		const auto quoted_string = lexeme['"' >> *(char_ - '"') >> '"'];
@@ -70,7 +70,6 @@ namespace script
 	}
 
 	parser::list_type getlist() {
-
 		return parser::list;
 	}
 	
