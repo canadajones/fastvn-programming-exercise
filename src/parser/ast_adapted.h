@@ -6,6 +6,12 @@
 #include <boost/fusion/include/std_pair.hpp>
 
 #include "ast.h"
+#include "boost/fusion/adapted/struct/adapt_struct.hpp"
+
+
+
+
+
 
 BOOST_FUSION_ADAPT_STRUCT(
     script::ast::Object,
@@ -15,6 +21,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
     script::ast::Array,
     values
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+    script::ast::Identifier,
+    ns,
+    id
 )
 
 BOOST_FUSION_ADAPT_STRUCT(

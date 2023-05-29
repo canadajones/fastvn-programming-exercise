@@ -20,20 +20,14 @@ namespace ascii = boost::spirit::x3::ascii;
 
 
 int main() {
-    std::string test = R"( (a.a = 2.0, a.b = {"test1" : "works", "test2": 2.0, "nested": {"hello" : 6.9}})";
+    std::string test = R"( (a.a = 2.0, b = {"test1" : "works", "test2": 2.0, "nested": {"hello" : 6.9}}) )";
 
     auto b = test.cbegin();
     auto e = test.cend();
     
     script::ast::List list;
-    script::ast::Object obj;
 
-
-
-    //auto result = x3::phrase_parse(b, e, script::parser::getlist(), ascii::space, list);
-    auto result = x3::phrase_parse(b, e, script::getobj(), ascii::space, obj);
-
-
+    auto result = x3::phrase_parse(b, e, script::getlist(), ascii::space, list);
 
     if (b != e) {
         std::cout << std::boolalpha << result << "\n";

@@ -2,6 +2,7 @@
 #define PARSER_AST_HEADER
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <map>
 #include <optional>
@@ -11,6 +12,7 @@
 
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
+#include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 
 namespace script { namespace ast {
 
@@ -24,31 +26,52 @@ namespace script { namespace ast {
 			std::string,
 			x3::forward_ast<Array>,
 			x3::forward_ast<Object>
-		>
+		>, x3::position_tagged
 	{
 		using base_type::base_type;
 		using base_type::operator=;
 	};
 	
-	struct Array {
+	struct Array : x3::position_tagged {
 		std::vector<Value> values;
 	};
 
-	struct Object {
+	struct Object : x3::position_tagged {
 		std::unordered_map<std::string, Value> values;
 	};
 
-	struct List {
-		std::unordered_map<std::string, Value> entries;
+	struct Identifier : x3::position_tagged {
+		boost::optional<std::string> ns;
+		std::string id;
+
+		std::string prettyprint() const {
+			return ns.value_or("") + "." + id;
+		}
+
+		bool operator==(const Identifier& rhs) const {
+			return (ns == rhs.ns) && (id == rhs.id);
+		}
 	};
+}}
+
+template<>
+struct std::hash<script::ast::Identifier> {
+	auto operator()(const script::ast::Identifier& ident) const {
+		return std::hash<std::string>{}(ident.prettyprint());
+	}
+};
+
+namespace script { namespace ast {
+	struct List : boost::spirit::x3::position_tagged {
+		std::unordered_map<Identifier, Value> entries;
+	};
+
+	
 	
 	using ObjectKeyVal = std::pair<std::string, Value>;
 
-	using ListKeyVal = std::pair<std::string, Value>;
+	using ListKeyVal = std::pair<Identifier, Value>;
 	
-	
-
-	using boost::fusion::operator<<;
 
 
 }}

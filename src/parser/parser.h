@@ -17,16 +17,11 @@ namespace script {
         
         BOOST_SPIRIT_DECLARE(list_type);
 
-        struct script_obj_class;
-        
-        using obj_type = x3::rule<script_list_class, ast::Object>;
-        
-        BOOST_SPIRIT_DECLARE(obj_type);
+
 
     
     }
-    parser::list_type getlist();
-    parser::obj_type getobj();    
+    parser::list_type getlist();  
 }
 
 

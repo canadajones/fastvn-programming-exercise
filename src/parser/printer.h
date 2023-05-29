@@ -22,9 +22,8 @@ namespace script { namespace ast
             out << '(' << std::endl;
             for (auto const& entry : ast.entries)
             {
-                //const auto ns = (entry.first.ns.has_value()) ? entry.first.ns.value() + "::" : "";
                 tab(indent+tabsize);
-                out << '"' << entry.first << "\" : ";
+                out << entry.first.prettyprint() << " = ";
                 boost::apply_visitor(list_printer(out, indent+tabsize), entry.second);
             }
             tab(indent);
