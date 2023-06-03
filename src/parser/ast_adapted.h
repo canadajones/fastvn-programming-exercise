@@ -34,4 +34,19 @@ BOOST_FUSION_ADAPT_STRUCT(
     entries
 )
 
+BOOST_FUSION_ADAPT_STRUCT(
+    script::ast::LineDeclaration,
+    type,
+    name,
+    list
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+    script::ast::BlockDeclaration,
+    type,
+    name,
+    list,
+    block
+)
+
 #endif

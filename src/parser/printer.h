@@ -30,8 +30,7 @@ namespace script { namespace ast
             out << ')' << std::endl;
         }
 
-        void operator()(const Object& obj) const
-        {
+        void operator()(const Object& obj) const {
             out << '{' << std::endl;
             for (auto const& entry : obj.values)
             {
@@ -43,8 +42,7 @@ namespace script { namespace ast
             out << '}' << std::endl;
         }
 
-        void operator()(const std::string& text) const
-        {
+        void operator()(const std::string& text) const  {
             out << '"' << text << '"' << std::endl;
         }
 

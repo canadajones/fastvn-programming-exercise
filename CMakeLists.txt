@@ -39,5 +39,5 @@ set_property(TARGET parsertest PROPERTY CXX_EXTENSIONS OFF)
 set_property(TARGET parsertest PROPERTY CXX_STANDARD_REQUIRED ON)
 
 if (CMAKE_COMPILER_IS_GNUCXX)
-	target_compile_options(parsertest PRIVATE -ftemplate-backtrace-limit=0  -Wfatal-errors -Wall -Wextra -Wno-unused-parameter -pthread -fmodules-ts)
+	target_compile_options(parsertest PRIVATE -ftemplate-backtrace-limit=0  -Wall -Wextra -Wno-unused-parameter -pthread -fmodules-ts)
 endif()

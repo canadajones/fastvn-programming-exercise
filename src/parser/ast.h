@@ -26,7 +26,7 @@ namespace script { namespace ast {
 			std::string,
 			x3::forward_ast<Array>,
 			x3::forward_ast<Object>
-		>, x3::position_tagged
+		>
 	{
 		using base_type::base_type;
 		using base_type::operator=;
@@ -43,6 +43,9 @@ namespace script { namespace ast {
 	struct Identifier : x3::position_tagged {
 		boost::optional<std::string> ns;
 		std::string id;
+
+		explicit Identifier(std::string ns, std::string id) : ns{ns}, id{id} {};
+		explicit Identifier() = default;
 
 		std::string prettyprint() const {
 			return ns.value_or("") + "." + id;
@@ -65,14 +68,26 @@ namespace script { namespace ast {
 	struct List : boost::spirit::x3::position_tagged {
 		std::unordered_map<Identifier, Value> entries;
 	};
-
-	
 	
 	using ObjectKeyVal = std::pair<std::string, Value>;
 
 	using ListKeyVal = std::pair<Identifier, Value>;
 	
 
+
+
+	struct LineDeclaration {
+		std::string type;
+		std::string name;
+		List list;
+	};
+
+	struct BlockDeclaration {
+		std::string type;
+		std::string name;
+		List list;
+		std::string block;
+	};
 
 }}
 

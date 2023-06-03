@@ -2,13 +2,17 @@
 #define PARSER_LIST_DEFINITION_HEADER
 #include <iostream>
 
-#include "ast.h"
-#include "ast_adapted.h"
 
-#define BOOST_SPIRIT_X3_DEBUG
-#include "parser.h"
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
+#include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp>
+
+#include "ast.h"
+#include "ast_adapted.h"
+#include "config.h"
+#include "parser.h"
+#include "parser/error_handler.h"
+#include "parser/printer.h"
 
 
 
@@ -25,19 +29,7 @@ namespace script
 
 		using ascii::char_;
 
-		// tag used to get the position cache from the context
-		struct position_cache_tag;
-
-		struct annotate_position
-		{
-			template <typename T, typename Iterator, typename Context>
-			inline void on_success(Iterator const& first, Iterator const& last
-			, T& ast, Context const& context)
-			{
-				auto& position_cache = x3::get<position_cache_tag>(context).get();
-				position_cache.annotate(ast, first, last);
-			}
-		};
+	
 
 
 		// List parser
@@ -48,6 +40,7 @@ namespace script
 		struct script_object_class;
 		struct identifier_class;
 		struct script_list_key_value_class;
+		struct script_list_inner_class;
 		
 		x3::rule<script_value_class, ast::Value> value = "value";
 		
@@ -61,34 +54,55 @@ namespace script
 
 		x3::rule<identifier_class, ast::Identifier> identifier = "identifier";
 
+		x3::rule<script_list_inner_class, ast::List> inner_list = "list";
+
 		list_type list = "list";
 
 
 		// Parser definitions
 		const auto quoted_string = lexeme['"' >> *(char_ - '"') >> '"'];
-
-		const auto value_def = x3::double_ | quoted_string | array | object;
-
-		const auto array_def = '[' >> (value % ',') >> ']';
-
-		const auto object_key_value_def = quoted_string >> ':' >> value;
-
-		const auto object_def = '{' >> (object_key_value % ',') >> '}';
-
 		// standard programming identifier rules: letter first, then alphanumerics
 		const auto ident_chars = x3::alpha >> *(x3::alnum);
-
-		const auto identifier_def = lexeme[-(*(ident_chars) >> '.') >> *(ident_chars)];
 		
-		const auto list_key_value_def = identifier >> '=' >> value;
+		const auto value_def = x3::double_ | quoted_string | array | object;
 
-		const auto list_def = '(' >> (list_key_value % ',') >> ')';
+		const auto array_def = '[' > (value % ',') > ']';
 
-		BOOST_SPIRIT_DEFINE(value, array, object, object_key_value, identifier, list_key_value, list);
+		const auto object_key_value_def = (quoted_string | ident_chars) > ':' > value;
 
+		const auto object_def = '{' > (object_key_value % ',') > '}';
 
+		const auto identifier_def = lexeme[-(*(ident_chars) >> '.') > *(ident_chars)];
+		
+		const auto list_key_value_def = identifier > '=' > value;
+
+		const auto inner_list_def = '(' > (list_key_value % ',') > ')';
+
+		const auto list_def = inner_list_def;
+
+		BOOST_SPIRIT_DEFINE(value, array, object, object_key_value, identifier, list_key_value, inner_list,list);
+
+		struct script_value_class : x3::annotate_on_success {};
+		struct script_array_class : x3::annotate_on_success {};
+		struct script_object_key_value_class : x3::annotate_on_success {};
+		struct script_object_class : x3::annotate_on_success {};
+		struct identifier_class : x3::annotate_on_success {};
+		struct script_list_key_value_class : x3::annotate_on_success {};
+		struct script_list_inner_class : x3::annotate_on_success {};
+		struct script_list_class : x3::annotate_on_success, error_handler_base {};
 
 		// Parser for overall structure
+
+		
+		struct line_declaration_class;
+		struct block_declaration_class;
+
+		x3::rule<line_declaration_class, ast::LineDeclaration> line_declaration = "line_declaration";
+		x3::rule<block_declaration_class, ast::BlockDeclaration> block_declaration = "block_declaration";
+
+		const auto line_declaration_def = (*ident_chars) >> (*ident_chars) >> list >> x3::eol;
+		const auto block_declaration_def = (*ident_chars) >> (*ident_chars) >> list >> ("#{" >> (x3::char_ - "}#") >> "}#");
+		
 
 
 	}
