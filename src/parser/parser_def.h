@@ -80,7 +80,7 @@ namespace script
 
 		const auto list_def = inner_list_def;
 
-		BOOST_SPIRIT_DEFINE(value, array, object, object_key_value, identifier, list_key_value, inner_list,list);
+		BOOST_SPIRIT_DEFINE(value, array, object, object_key_value, identifier, list_key_value, inner_list, list);
 
 		struct script_value_class : x3::annotate_on_success {};
 		struct script_array_class : x3::annotate_on_success {};
@@ -89,27 +89,50 @@ namespace script
 		struct identifier_class : x3::annotate_on_success {};
 		struct script_list_key_value_class : x3::annotate_on_success {};
 		struct script_list_inner_class : x3::annotate_on_success {};
-		struct script_list_class : x3::annotate_on_success, error_handler_base {};
+		struct script_list_class : x3::annotate_on_success {};
 
 		// Parser for overall structure
 
 		
 		struct line_declaration_class;
 		struct block_declaration_class;
+		struct version_class;
+		struct using_declaration_class;
 
 		x3::rule<line_declaration_class, ast::LineDeclaration> line_declaration = "line_declaration";
 		x3::rule<block_declaration_class, ast::BlockDeclaration> block_declaration = "block_declaration";
+		x3::rule<version_class, ast::ScriptVersion> version = "version";
+		x3::rule<using_declaration_class, ast::UsingDeclaration> using_declaration = "using_declaration";
+
+		script_type script = "script";
 
 		const auto line_declaration_def = (*ident_chars) >> (*ident_chars) >> list >> x3::eol;
-		const auto block_declaration_def = (*ident_chars) >> (*ident_chars) >> list >> ("#{" >> (x3::char_ - "}#") >> "}#");
+		const auto block_declaration_def = (*ident_chars) >> (*ident_chars) >> list >> ("#{" >> *(x3::char_ - "}#") >> "}#");
+		const auto version_def = x3::lit("script") >> "version" >> x3::int_ >> "." >> x3::int_ >> "." >> x3::int_ >> ";";
+		const auto using_declaration_def = "using" >> *(ident_chars);
+
+		const auto script_element = line_declaration | block_declaration | using_declaration;
+
+		const auto script_def = version >> *(script_element);
+
+		struct line_declaration_class : x3::annotate_on_success {};
+		struct block_declaration_class : x3::annotate_on_success {};
+		struct version_class : x3::annotate_on_success {};
+		struct using_declaration_class : x3::annotate_on_success {};
+		struct script_class : x3::annotate_on_success, error_handler_base {};
 		
 
-
+		BOOST_SPIRIT_DEFINE(line_declaration, block_declaration, version, using_declaration, script);
 	}
 
 	parser::list_type getlist() {
 		return parser::list;
 	}
+
+	parser::script_type getscript() {
+		return parser::script;
+	}	
+
 	
 
 }

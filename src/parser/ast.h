@@ -8,6 +8,7 @@
 #include <optional>
 #include <concepts>
 #include <ranges>
+#include <variant>
 
 
 #include <boost/spirit/home/x3.hpp>
@@ -76,17 +77,36 @@ namespace script { namespace ast {
 
 
 
-	struct LineDeclaration {
+	struct LineDeclaration : x3::position_tagged {
 		std::string type;
 		std::string name;
 		List list;
 	};
 
-	struct BlockDeclaration {
+	struct BlockDeclaration : x3::position_tagged {
 		std::string type;
 		std::string name;
 		List list;
 		std::string block;
+	};
+
+	struct ScriptVersion : x3::position_tagged {
+		int major;
+		int minor;
+		int patch;
+	};
+
+	/*
+	struct UsingDeclaration : x3::position_tagged {
+		std::string name;
+	};
+	*/
+
+	using UsingDeclaration = std::string;
+
+	struct Script : x3::position_tagged {
+		ScriptVersion version;
+		std::vector<std::variant<LineDeclaration, BlockDeclaration, UsingDeclaration>> contents;
 	};
 
 }}

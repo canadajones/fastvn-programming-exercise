@@ -8,11 +8,6 @@
 #include "ast.h"
 #include "boost/fusion/adapted/struct/adapt_struct.hpp"
 
-
-
-
-
-
 BOOST_FUSION_ADAPT_STRUCT(
     script::ast::Object,
     values
@@ -47,6 +42,24 @@ BOOST_FUSION_ADAPT_STRUCT(
     name,
     list,
     block
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+    script::ast::ScriptVersion,
+    major,
+    minor,
+    patch
+)
+/*
+BOOST_FUSION_ADAPT_STRUCT(
+    script::ast::UsingDeclaration,
+    name
+)
+*/
+BOOST_FUSION_ADAPT_STRUCT(
+    script::ast::Script,
+    version,
+    contents
 )
 
 #endif

@@ -7,22 +7,27 @@
 
 
 namespace script {
-    namespace x3 = boost::spirit::x3;
+	namespace x3 = boost::spirit::x3;
 
-    namespace parser
-    {
-        struct script_list_class;
-        
-        using list_type = x3::rule<script_list_class, ast::List>;
-        
-        BOOST_SPIRIT_DECLARE(list_type);
-
-        
+	namespace parser
+	{
+		struct script_list_class;
+		
+		using list_type = x3::rule<script_list_class, ast::List>;
+		
+		BOOST_SPIRIT_DECLARE(list_type);
 
 
-    
-    }
-    parser::list_type getlist();  
+		struct script_class;
+		
+		using script_type = x3::rule<script_class, ast::Script>;
+		
+		BOOST_SPIRIT_DECLARE(script_type);
+	
+	}
+	parser::list_type getlist();  
+	parser::script_type getscript();
+
 }
 
 
