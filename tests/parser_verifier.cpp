@@ -26,6 +26,29 @@ namespace x3 = boost::spirit::x3;
 namespace ascii = boost::spirit::x3::ascii;
 
 
+struct print_visitor {
+	
+	using result_type = void;
+
+	script::ast::list_printer lp{std::cout};
+	
+	void operator()(const script::ast::UsingDeclaration& use) const {
+		std::cout << "Using: " << use.name << "\n";
+	}
+	void operator()(const script::ast::LineDeclaration& line) const {
+		std::cout << "Line: " << line.type.stringify() << " " << line.name << "\n";
+		std::cout << "\tList: ";
+		lp(line.list);	
+	}
+	void operator()(const script::ast::BlockDeclaration& block) const {
+		std::cout << "Line: " << block.type.stringify() << " " << block.name << "\n";
+		std::cout << "\tList: ";
+		lp(block.list);
+
+		std::cout << "\n Block: " << block.block << std::endl;	
+	}
+};
+
 
 
 int main() {
@@ -46,21 +69,24 @@ int main() {
 
 
 
-
-
 	script::ast::Script script;
 	auto result = x3::phrase_parse(start, end, parser, ascii::space, script);
 
 
 	if (result) {
-		std::cout << "works!" << std::endl;
-
 		for (auto ch : error_handler.position_of(script)) {
 			std::cout << ch;
 		}
+		std::cout << std::endl;
 	}
 	
+	std::cout << script.version.prettyprint() << std::endl;
+	
+	print_visitor pv;
+	for (auto elem : script.contents) {
 
+		boost::apply_visitor(print_visitor{}, elem);
+	}
 	
 
 	

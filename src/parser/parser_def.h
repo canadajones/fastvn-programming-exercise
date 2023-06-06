@@ -1,14 +1,17 @@
 #ifndef PARSER_LIST_DEFINITION_HEADER
 #define PARSER_LIST_DEFINITION_HEADER
 #include <iostream>
-
+//#define BOOST_SPIRIT_X3_DEBUG
 
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
 #include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp>
 
+
+
 #include "ast.h"
 #include "ast_adapted.h"
+#include "boost/spirit/home/x3/auxiliary/eps.hpp"
 #include "config.h"
 #include "parser.h"
 #include "parser/error_handler.h"
@@ -26,6 +29,7 @@ namespace script
 
 		using x3::lit;
 		using x3::lexeme;
+		using x3::skip;
 
 		using ascii::char_;
 
@@ -34,37 +38,43 @@ namespace script
 
 		// List parser
 		// Parser declarations
-		struct script_value_class;
-		struct script_array_class;
-		struct script_object_key_value_class;
-		struct script_object_class;
-		struct identifier_class;
-		struct script_list_key_value_class;
-		struct script_list_inner_class;
+		struct script_value_tag;
+		struct script_array_tag;
+		struct script_object_key_value_tag;
+		struct script_object_tag;
+		struct identifier_tag;
+		struct script_list_key_value_tag;
+		struct script_list_inner_tag;
+		struct ident_chars_tag;
+
+		x3::rule<script_value_tag, ast::Value> value = "value";
 		
-		x3::rule<script_value_class, ast::Value> value = "value";
+		x3::rule<script_array_tag, ast::Array> array = "array";
 		
-		x3::rule<script_array_class, ast::Array> array = "array";
-		
-		x3::rule<script_object_key_value_class, ast::ObjectKeyVal> object_key_value = "object_key_value";
+		x3::rule<script_object_key_value_tag, ast::ObjectKeyVal> object_key_value = "object_key_value";
 
-		x3::rule<script_object_class, ast::Object> object = "object";
+		x3::rule<script_object_tag, ast::Object> object = "object";
 
-		x3::rule<script_list_key_value_class, ast::ListKeyVal> list_key_value = "list_key_value";
+		x3::rule<script_list_key_value_tag, ast::ListKeyVal> list_key_value = "list_key_value";
 
-		x3::rule<identifier_class, ast::Identifier> identifier = "identifier";
+		x3::rule<ident_chars_tag, std::string> ident_chars = "ident_chars";
 
-		x3::rule<script_list_inner_class, ast::List> inner_list = "list";
+		x3::rule<identifier_tag, ast::Identifier> identifier = "identifier";
+
+		x3::rule<script_list_inner_tag, ast::List> inner_list = "list";
 
 		list_type list = "list";
 
 
+		
+
 		// Parser definitions
 		const auto quoted_string = lexeme['"' >> *(char_ - '"') >> '"'];
-		// standard programming identifier rules: letter first, then alphanumerics
-		const auto ident_chars = x3::alpha >> *(x3::alnum);
 		
-		const auto value_def = x3::double_ | quoted_string | array | object;
+		// standard programming identifier rules: letter first, then alphanumerics
+		const auto ident_chars_def = lexeme[(x3::alpha | char_('_') | char_('$')) >> *(x3::alnum | char_('_') | char_('$'))];
+		
+		const auto value_def = x3::double_ | quoted_string | ident_chars | array | object;
 
 		const auto array_def = '[' > (value % ',') > ']';
 
@@ -80,53 +90,65 @@ namespace script
 
 		const auto list_def = inner_list_def;
 
-		BOOST_SPIRIT_DEFINE(value, array, object, object_key_value, identifier, list_key_value, inner_list, list);
+		BOOST_SPIRIT_DEFINE(value, array, object, object_key_value, identifier, list_key_value, ident_chars, inner_list, list);
 
-		struct script_value_class : x3::annotate_on_success {};
-		struct script_array_class : x3::annotate_on_success {};
-		struct script_object_key_value_class : x3::annotate_on_success {};
-		struct script_object_class : x3::annotate_on_success {};
-		struct identifier_class : x3::annotate_on_success {};
-		struct script_list_key_value_class : x3::annotate_on_success {};
-		struct script_list_inner_class : x3::annotate_on_success {};
-		struct script_list_class : x3::annotate_on_success {};
+		struct script_value_tag : x3::annotate_on_success {};
+		struct script_array_tag : x3::annotate_on_success {};
+		struct script_object_key_value_tag : x3::annotate_on_success {};
+		struct script_object_tag : x3::annotate_on_success {};
+		struct identifier_tag : x3::annotate_on_success {};
+		struct script_list_key_value_tag : x3::annotate_on_success {};
+		struct script_list_inner_tag : x3::annotate_on_success {};
+		struct script_list_tag : x3::annotate_on_success {};
 
 		// Parser for overall structure
-
 		
-		struct line_declaration_class;
-		struct block_declaration_class;
-		struct version_class;
-		struct using_declaration_class;
-
-		x3::rule<line_declaration_class, ast::LineDeclaration> line_declaration = "line_declaration";
-		x3::rule<block_declaration_class, ast::BlockDeclaration> block_declaration = "block_declaration";
-		x3::rule<version_class, ast::ScriptVersion> version = "version";
-		x3::rule<using_declaration_class, ast::UsingDeclaration> using_declaration = "using_declaration";
-
+		
+		struct version_tag;
+		struct using_declaration_tag;
+		struct line_declaration_tag;
+		struct block_contests_tag;
+		struct block_declaration_tag;
+		
+		
+		x3::rule<version_tag, ast::ScriptVersion> version = "version";
+		
+		x3::rule<using_declaration_tag, ast::UsingDeclaration> using_declaration = "using_declaration";
+		
+		x3::rule<line_declaration_tag, ast::LineDeclaration> line_declaration = "line_declaration";
+		
+		x3::rule<block_contests_tag, std::string> block_contents = "block_contents";
+		
+		x3::rule<block_declaration_tag, ast::BlockDeclaration> block_declaration = "block_declaration";
+				
 		script_type script = "script";
 
-		const auto line_declaration_def = (*ident_chars) >> (*ident_chars) >> list >> x3::eol;
-		const auto block_declaration_def = (*ident_chars) >> (*ident_chars) >> list >> ("#{" >> *(x3::char_ - "}#") >> "}#");
+
+
 		const auto version_def = x3::lit("script") >> "version" >> x3::int_ >> "." >> x3::int_ >> "." >> x3::int_ >> ";";
-		const auto using_declaration_def = "using" >> *(ident_chars);
+		
+		const auto using_declaration_def = x3::lit("using") > skip(x3::lit(' ') | '\t')[ident_chars > x3::eol];
+		
+		const auto line_declaration_def = identifier >> ident_chars >> list >> skip(x3::lit(' ') | '\t')[x3::eps >> x3::eol];
+		
+		const auto block_contents_def = lexeme[("#{" >> *(!lit("}#") >> char_) >> "}#")];
+
+		const auto block_declaration_def = identifier >> ident_chars >> (list > block_contents);
 
 		const auto script_element = line_declaration | block_declaration | using_declaration;
 
-		const auto script_def = version >> *(script_element);
-
-		struct line_declaration_class : x3::annotate_on_success {};
-		struct block_declaration_class : x3::annotate_on_success {};
-		struct version_class : x3::annotate_on_success {};
-		struct using_declaration_class : x3::annotate_on_success {};
-		struct script_class : x3::annotate_on_success, error_handler_base {};
+		const auto script_def = x3::eps > version >> *(script_element);
 		
 
-		BOOST_SPIRIT_DEFINE(line_declaration, block_declaration, version, using_declaration, script);
-	}
 
-	parser::list_type getlist() {
-		return parser::list;
+		struct version_tag : x3::annotate_on_success {};
+		struct using_declaration_tag : x3::annotate_on_success {};
+		struct line_declaration_tag : x3::annotate_on_success {};
+		struct block_declaration_tag : x3::annotate_on_success {};
+		struct script_tag : x3::annotate_on_success, error_handler_base {};
+		
+
+		BOOST_SPIRIT_DEFINE(version, using_declaration, line_declaration, block_contents, block_declaration, script);
 	}
 
 	parser::script_type getscript() {

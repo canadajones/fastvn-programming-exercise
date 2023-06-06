@@ -23,7 +23,7 @@ namespace script { namespace ast
             for (auto const& entry : ast.entries)
             {
                 tab(indent+tabsize);
-                out << entry.first.prettyprint() << " = ";
+                out << entry.first.stringify() << " = ";
                 boost::apply_visitor(list_printer(out, indent+tabsize), entry.second);
             }
             tab(indent);

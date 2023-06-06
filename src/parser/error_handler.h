@@ -53,6 +53,13 @@ namespace script { namespace parser
 		id_map["object_key_value"] = "Object key value pair";
 		id_map["object"] = "Object";
 		id_map["identifier"] = "Identifier";
+		
+		
+		id_map["version"] = "Version identifier";
+		id_map["using_declaration"] = "Using declaration";
+		id_map["line_declaration"] = "Line declaration";
+		id_map["block_declaration"] = "Block declaration";
+		id_map["script"] = "Script";
 	}
 
 	template <typename Iterator, typename Exception, typename Context>
