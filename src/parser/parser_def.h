@@ -135,12 +135,13 @@ namespace script
 
 		const auto block_declaration_def = identifier >> ident_chars >> (list > block_contents);
 
-		const auto script_element = line_declaration | block_declaration | using_declaration;
+		const auto script_element = line_declaration | block_declaration;
 
 		const auto script_def = x3::eps > version >> *(script_element);
 		
 
-
+		BOOST_SPIRIT_DEFINE(version, using_declaration, line_declaration, block_contents, block_declaration, script);
+		
 		struct version_tag : x3::annotate_on_success {};
 		struct using_declaration_tag : x3::annotate_on_success {};
 		struct line_declaration_tag : x3::annotate_on_success {};
@@ -148,7 +149,7 @@ namespace script
 		struct script_tag : x3::annotate_on_success, error_handler_base {};
 		
 
-		BOOST_SPIRIT_DEFINE(version, using_declaration, line_declaration, block_contents, block_declaration, script);
+		
 	}
 
 	parser::script_type getscript() {

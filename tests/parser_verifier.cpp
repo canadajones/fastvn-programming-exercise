@@ -34,6 +34,7 @@ struct print_visitor {
 	
 	void operator()(const script::ast::UsingDeclaration& use) const {
 		std::cout << "Using: " << use.name << "\n";
+
 	}
 	void operator()(const script::ast::LineDeclaration& line) const {
 		std::cout << "Line: " << line.type.stringify() << " " << line.name << "\n";
@@ -85,7 +86,7 @@ int main() {
 	print_visitor pv;
 	for (auto elem : script.contents) {
 
-		boost::apply_visitor(print_visitor{}, elem);
+		//boost::apply_visitor(print_visitor{}, elem);
 	}
 	
 

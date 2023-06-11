@@ -60,6 +60,7 @@ namespace script { namespace parser
 		id_map["line_declaration"] = "Line declaration";
 		id_map["block_declaration"] = "Block declaration";
 		id_map["script"] = "Script";
+		
 	}
 
 	template <typename Iterator, typename Exception, typename Context>
