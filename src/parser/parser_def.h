@@ -135,9 +135,9 @@ namespace script
 
 		const auto block_declaration_def = identifier >> ident_chars >> (list > block_contents);
 
-		const auto script_element = line_declaration | block_declaration;
+		const auto script_element = using_declaration | line_declaration | block_declaration;
 
-		const auto script_def = x3::eps > version >> *(script_element);
+		const auto script_def = x3::eps > version > +(script_element);
 		
 
 		BOOST_SPIRIT_DEFINE(version, using_declaration, line_declaration, block_contents, block_declaration, script);

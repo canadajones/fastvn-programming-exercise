@@ -16,6 +16,7 @@
 #include "parser/error_handler.h"
 
 #include "util/files.h"
+#include "util/output.h"
 
 #include "parser/printer.h"
 
@@ -53,9 +54,9 @@ struct print_visitor {
 
 
 int main() {
-	//std::string test = R"( (a.a = 2.0, b = {test1 : "works", "test2": 2.0, nested: { "hello" : 6.9}}) )";
 	
-	std::string test = loadFileToString("sample.txt");
+	std::string file = "sample.txt";
+	std::string test = loadFileToString(file);
 	
 	using script::parser::iterator_type;
 
@@ -64,7 +65,7 @@ int main() {
 	
 	using script::parser::error_handler_type;
 	using script::parser::error_handler_tag;
-	error_handler_type error_handler(start, end, std::cout, std::string("Hello!")); 
+	error_handler_type error_handler(start, end, std::cout, file); 
 
 	const auto parser = x3::with<script::parser::error_handler_tag>(std::ref(error_handler))[script::getscript()];
 
@@ -76,9 +77,9 @@ int main() {
 
 	if (result) {
 		for (auto ch : error_handler.position_of(script)) {
-			std::cout << ch;
+			print(ch);
 		}
-		std::cout << std::endl;
+		print("\n");
 	}
 	
 	std::cout << script.version.prettyprint() << std::endl;
@@ -86,7 +87,7 @@ int main() {
 	print_visitor pv;
 	for (auto elem : script.contents) {
 
-		//boost::apply_visitor(print_visitor{}, elem);
+		boost::apply_visitor(print_visitor{}, elem);
 	}
 	
 

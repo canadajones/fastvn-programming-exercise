@@ -11,16 +11,16 @@ namespace script {
 
 	namespace parser
 	{
-		struct script_list_class;
+		struct script_list_tag;
 		
-		using list_type = x3::rule<script_list_class, ast::List>;
+		using list_type = x3::rule<script_list_tag, ast::List>;
 		
 		BOOST_SPIRIT_DECLARE(list_type);
 
 
-		struct script_class;
+		struct script_tag;
 		
-		using script_type = x3::rule<script_class, ast::Script>;
+		using script_type = x3::rule<script_tag, ast::Script>;
 		
 		BOOST_SPIRIT_DECLARE(script_type);
 	
