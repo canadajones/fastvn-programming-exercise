@@ -1,5 +1,5 @@
-#ifndef PARSER_CONFIG_HEADER
-#define PARSER_CONFIG_HEADER
+#ifndef METASYNTAX_CONFIG_HEADER
+#define METASYNTAX_CONFIG_HEADER
 
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/position_tagged.hpp>
@@ -7,7 +7,7 @@
 #include "error_handler.h"
 
 
-namespace script { namespace parser
+namespace metasyntax { namespace parser
 {
     namespace x3 = boost::spirit::x3;
 

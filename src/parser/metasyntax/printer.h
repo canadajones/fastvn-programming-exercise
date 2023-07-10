@@ -1,11 +1,11 @@
-#ifndef PARSER_PRINTER_HEADER
-#define PARSER_PRINTER_HEADER
+#ifndef METASYNTAX_PRINTER_HEADER
+#define METASYNTAX_PRINTER_HEADER
 
 #include <ostream>
 
 #include "ast.h"
 
-namespace script { namespace ast
+namespace metasyntax { namespace ast
 {
 
     const int tabsize = 4;

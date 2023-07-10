@@ -1,3 +1,7 @@
+#ifndef VERSIONING_SYSTEM_HEADER
+#define VERSIONING_SYSTEM_HEADER
+
+
 #include <ios>
 #include <stdexcept>
 #include <string>
@@ -72,28 +76,25 @@ namespace feature_versioning {
         };
     }
 
+
     /**
      * @brief An individually named, namespaced and versioned component of a system
      * 
-     * @tparam Type of comparator function, accepting namespace, expected version string and provided version string (all string_views)
      */
-    template <typename VersionComparator> requires requires (VersionComparator vc, std::string_view sv) {{vc(sv, sv, sv)} -> std::same_as<VersionComparisonResult>;}
     class Feature {
         std::string ns;
         std::string feature_name;
         std::string version;
         
-        VersionComparator comparator;
         public:
 
         /**
          * @brief Construct a new Feature
          * 
          * @param feature_string A string of the form (namespace delimiter feature_name delimiter version_string).
-         * @param vc Function vc(namespace, required, provided) that correctly compares the version any two features in a given namespace.
-         * @param delimiter Delimiter between feature string fields. Defaults to "::".
+         * @param delimiter Delimiter between feature string fields..
          */
-        explicit Feature(std::string_view feature_string, VersionComparator vc, std::string_view delimiter = "::") : comparator{vc} {
+        explicit constexpr Feature(std::string_view feature_string, std::string_view delimiter) {
 
             // example feature_string = namespace::feature_name::v1.0
 
@@ -117,6 +118,33 @@ namespace feature_versioning {
             // the rest of the string after the feature name and delimiter is the version string
             version = feature_string.substr(name_end_pos + delimiter.size());
         };
+        template <typename VersionComparator> requires requires (VersionComparator vc, std::string_view sv) {{vc(sv, sv, sv)} -> std::same_as<VersionComparisonResult>;}
+        friend class FeatureRequirement;
+    };
+
+    /**
+     * @brief Represents a requirement for a individually named, namespaced and versioned component of a system
+     * 
+     * @tparam Type of comparator function, accepting namespace, expected version string and provided version string (all string_views)
+     */
+    template <typename VersionComparator> requires requires (VersionComparator vc, std::string_view sv) {{vc(sv, sv, sv)} -> std::same_as<VersionComparisonResult>;}
+    class FeatureRequirement {
+        
+        Feature feature;
+        
+        VersionComparator comparator;
+        public:
+
+        /**
+         * @brief Creates a new feature requirement from a feature string
+         * 
+         * @param feature_string A string of the form (namespace delimiter feature_name delimiter version_string).
+         * @param vc Function vc(namespace, required, provided) that correctly compares the version any two features in a given namespace.
+         * @param delimiter Delimiter between feature string fields. Defaults to "::".
+         */
+        explicit constexpr FeatureRequirement(std::string_view feature_string, VersionComparator vc, std::string_view delimiter = "::") : feature{feature_string, delimiter}, comparator{vc} {
+
+        };
 
         /**
          * @brief Tests if the provided feature satisfies the (current) required feature.
@@ -126,12 +154,15 @@ namespace feature_versioning {
          * @return false - The provided feature does not satisfy the version requirement.
          */
         bool isSatisfiedBy(const Feature& provided) {
-            if (provided.ns != ns || provided.feature_name != feature_name) {
+            if (provided.ns != feature.ns || provided.feature_name != feature.feature_name) {
                 return false;
             }
-            return static_cast<bool>(comparator(ns, version, provided.version));
+            return static_cast<bool>(comparator(feature.ns, feature.version, provided.version));
         }
 
     };
 
 };
+
+
+#endif

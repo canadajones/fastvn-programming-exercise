@@ -1,5 +1,5 @@
-#ifndef PARSER_AST_ADAPTED_HEADER
-#define PARSER_AST_ADAPTED_HEADER
+#ifndef METASYNTAX_AST_ADAPTED_HEADER
+#define METASYNTAX_AST_ADAPTED_HEADER
 
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/fusion/include/std_tuple.hpp>
@@ -9,47 +9,47 @@
 #include "boost/fusion/adapted/struct/adapt_struct.hpp"
 
 BOOST_FUSION_ADAPT_STRUCT(
-    script::ast::Object,
+    metasyntax::ast::Object,
     values
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-    script::ast::Array,
+    metasyntax::ast::Array,
     values
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-    script::ast::Identifier,
+    metasyntax::ast::NamespacedIdentifier,
     ns,
     id
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-    script::ast::List,
+    metasyntax::ast::List,
     entries
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-    script::ast::ScriptVersion,
+    metasyntax::ast::DocumentVersion,
     major,
     minor,
     patch
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-    script::ast::UsingDeclaration,
+    metasyntax::ast::UsingDeclaration,
     name
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-    script::ast::LineDeclaration,
+    metasyntax::ast::LineDeclaration,
     type,
     name,
     list
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-    script::ast::BlockDeclaration,
+    metasyntax::ast::BlockDeclaration,
     type,
     name,
     list,
@@ -57,7 +57,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
-    script::ast::Script,
+    metasyntax::ast::Document,
     version,
     contents
 )

@@ -8,17 +8,19 @@
 #include "boost/spirit/home/x3/char/char_class.hpp"
 #include "boost/spirit/home/x3/core/parse.hpp"
 
-
-#include "parser/parser.h"
-#include "parser/ast.h"
-#include "parser/ast_adapted.h"
-#include "parser/config.h"
-#include "parser/error_handler.h"
-
 #include "util/files.h"
 #include "util/output.h"
 
-#include "parser/printer.h"
+#include "parser/metasyntax/metasyntax.h"
+#include "parser/metasyntax/ast.h"
+#include "parser/metasyntax/ast_adapted.h"
+#include "parser/metasyntax/config.h"
+#include "parser/metasyntax/error_handler.h"
+#include "parser/metasyntax/printer.h"
+
+
+#include "versioning/versioning.h"
+#include "parser/metasyntax/version.h"
 
 
 
@@ -31,18 +33,18 @@ struct print_visitor {
 	
 	using result_type = void;
 
-	script::ast::list_printer lp{std::cout};
+	metasyntax::ast::list_printer lp{std::cout};
 	
-	void operator()(const script::ast::UsingDeclaration& use) const {
+	void operator()(const metasyntax::ast::UsingDeclaration& use) const {
 		std::cout << "Using: " << use.name << "\n";
 
 	}
-	void operator()(const script::ast::LineDeclaration& line) const {
+	void operator()(const metasyntax::ast::LineDeclaration& line) const {
 		std::cout << "Line: " << line.type.stringify() << " " << line.name << "\n";
 		std::cout << "\tList: ";
 		lp(line.list);	
 	}
-	void operator()(const script::ast::BlockDeclaration& block) const {
+	void operator()(const metasyntax::ast::BlockDeclaration& block) const {
 		std::cout << "Line: " << block.type.stringify() << " " << block.name << "\n";
 		std::cout << "\tList: ";
 		lp(block.list);
@@ -58,39 +60,38 @@ int main() {
 	std::string file = "sample.txt";
 	std::string test = loadFileToString(file);
 	
-	using script::parser::iterator_type;
+	using metasyntax::parser::iterator_type;
 
 	iterator_type start = test.cbegin();
 	iterator_type end = test.cend();
 	
-	using script::parser::error_handler_type;
-	using script::parser::error_handler_tag;
+	using metasyntax::parser::error_handler_type;
+	using metasyntax::parser::error_handler_tag;
 	error_handler_type error_handler(start, end, std::cout, file); 
 
-	const auto parser = x3::with<script::parser::error_handler_tag>(std::ref(error_handler))[script::getscript()];
+	const auto parser = x3::with<metasyntax::parser::error_handler_tag>(std::ref(error_handler))[metasyntax::getDocumentParser()];
 
 
 
-	script::ast::Script script;
-	auto result = x3::phrase_parse(start, end, parser, ascii::space, script);
+	metasyntax::ast::Document document;
+	auto result = x3::phrase_parse(start, end, parser, ascii::space, document);
 
-
-	if (result) {
-		for (auto ch : error_handler.position_of(script)) {
-			print(ch);
-		}
-		print("\n");
+	if (!result) {
+		std::cout << "incomplete parsing\n";
 	}
-	
-	std::cout << script.version.prettyprint() << std::endl;
-	
-	print_visitor pv;
-	for (auto elem : script.contents) {
 
-		boost::apply_visitor(print_visitor{}, elem);
+	// verify that script version matches internal parser version
+	std::string versionString = "semver::metasyntax::v" + document.version.prettyprint();
+	feature_versioning::FeatureRequirement requirement{versionString, feature_versioning::default_comparisons::default_version_comparator};
+
+	if (!requirement.isSatisfiedBy(metasyntaxVersion)) {
+		throw std::runtime_error("Metasyntax version does not match script version");
 	}
-	
 
+
+	// ensure that the parser actually matched everything in sample.txt
+
+	assert(boost::get<metasyntax::ast::UsingDeclaration>document.contents[0] == )	
 	
 
 	
