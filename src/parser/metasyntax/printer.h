@@ -10,11 +10,11 @@ namespace metasyntax { namespace ast
 
     const int tabsize = 4;
 
-    struct list_printer
+    struct line_printer
     {
         typedef void result_type;
 
-        list_printer(std::ostream& out, int indent = 0)
+        line_printer(std::ostream& out, int indent = 0)
           : out(out), indent(indent) {}
 
         void operator()(const List& ast) const
@@ -24,7 +24,7 @@ namespace metasyntax { namespace ast
             {
                 tab(indent+tabsize);
                 out << entry.first.stringify() << " = ";
-                boost::apply_visitor(list_printer(out, indent+tabsize), entry.second);
+                boost::apply_visitor(line_printer(out, indent+tabsize), entry.second);
             }
             tab(indent);
             out << ')' << std::endl;
@@ -36,7 +36,7 @@ namespace metasyntax { namespace ast
             {
                 tab(indent+tabsize);
                 out << '"' << entry.first << "\" : ";
-                boost::apply_visitor(list_printer(out, indent+tabsize), entry.second);
+                boost::apply_visitor(line_printer(out, indent+tabsize), entry.second);
             }
             tab(indent);
             out << '}' << std::endl;
@@ -55,7 +55,7 @@ namespace metasyntax { namespace ast
             for (auto const& elem : arr.values)
             {
                 tab(indent+tabsize);
-                boost::apply_visitor(list_printer(out, indent+tabsize), elem);
+                boost::apply_visitor(line_printer(out, indent+tabsize), elem);
                 out << ',';
             }
             tab(indent);

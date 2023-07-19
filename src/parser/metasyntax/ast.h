@@ -1,6 +1,8 @@
 #ifndef METASYNTAX_AST_HEADER
 #define METASYNTAX_AST_HEADER
 
+#include "boost/none_t.hpp"
+#include "boost/variant/detail/apply_visitor_unary.hpp"
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -23,7 +25,8 @@ namespace metasyntax {
 			boost::optional<std::string> ns;
 			std::string id;
 
-			explicit NamespacedIdentifier(std::string ns, std::string id) : ns{ns}, id{id} {};
+			explicit NamespacedIdentifier(const std::string& ns, const std::string& id) : ns{ns}, id{id} {};
+			explicit NamespacedIdentifier(const boost::none_t& ns, const std::string& id) : ns{ns}, id{id} {};
 			explicit NamespacedIdentifier() = default;
 
 			std::string stringify() const {
@@ -86,16 +89,34 @@ namespace metasyntax {
 			std::string prettyprint() const {
 				return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
 			}
+
+			bool operator==(const DocumentVersion& rhs) const {
+				return major == rhs.major && minor == rhs.major && patch == rhs.patch;
+			} 
 		};
 
 		struct UsingDeclaration : x3::position_tagged {
 			std::string name;
+
+			explicit UsingDeclaration(const std::string& name) : name{name} {};
+			explicit UsingDeclaration() = default;
+
+			bool operator==(const UsingDeclaration& rhs) const {
+				return name == rhs.name;
+			} 
 		};
 
 		struct LineDeclaration : x3::position_tagged {
 			NamespacedIdentifier type;
 			std::string name;
 			List list;
+
+			LineDeclaration(const NamespacedIdentifier& type, const std::string& name, const List& list) : type{type}, name{name}, list{list} {};
+			LineDeclaration() = default;
+
+			bool operator==(const LineDeclaration& rhs) const {
+				return type == rhs.type && name == rhs.name;
+			} 
 		};
 
 		struct BlockDeclaration : x3::position_tagged {
@@ -103,6 +124,12 @@ namespace metasyntax {
 			std::string name;
 			List list;
 			std::string block;
+
+			BlockDeclaration(const NamespacedIdentifier& type, const std::string& name, const List& list, const std::string& block) : type{type}, name{name}, list{list}, block{block} {};
+			BlockDeclaration() = default;
+			bool operator==(const BlockDeclaration& rhs) const {
+				return type == rhs.type && name == rhs.name && block == rhs.block;
+			} 
 		};
 
 		struct Document : x3::position_tagged {

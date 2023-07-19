@@ -1,3 +1,4 @@
+#include <concepts>
 #include <iostream>
 #include <ranges>
 
@@ -33,7 +34,7 @@ struct print_visitor {
 	
 	using result_type = void;
 
-	metasyntax::ast::list_printer lp{std::cout};
+	metasyntax::ast::line_printer lp{std::cout};
 	
 	void operator()(const metasyntax::ast::UsingDeclaration& use) const {
 		std::cout << "Using: " << use.name << "\n";
@@ -53,6 +54,24 @@ struct print_visitor {
 	}
 };
 
+template<typename T>
+void must_equal(decltype(metasyntax::ast::Document::contents)::value_type value, T target) {
+	if (boost::get<T>(value) != target) {
+		throw std::runtime_error(boost::core::demangle(typeid(T).name()) + ": Value does not equal target!");
+	}
+}
+
+template<typename T>
+concept HasName = requires(T t) { {t.name} -> std::convertible_to<std::string>; };
+
+template<HasName T>
+void must_equal(decltype(metasyntax::ast::Document::contents)::value_type value, T target) {
+	auto v = boost::get<T>(value);
+	if (v != target) {
+		
+		throw std::runtime_error(boost::core::demangle(typeid(T).name()) + ": " + v.name + " does not equal " + target.name + "!");
+	}
+}
 
 
 int main() {
@@ -90,8 +109,29 @@ int main() {
 
 
 	// ensure that the parser actually matched everything in sample.txt
+	// todo: currently, lists are not checked (recursive and miserable to check)
+	// todo: perhaps write a checker for scriptflow
+	auto& contents = document.contents;
+	namespace msast = metasyntax::ast;
+	must_equal(contents[0], msast::UsingDeclaration{"vnpge"});
+	must_equal(contents[1], msast::LineDeclaration{msast::NamespacedIdentifier{boost::none, "location"}, "Park", msast::List()});
+	must_equal(contents[2], msast::LineDeclaration{msast::NamespacedIdentifier{boost::none, "character"}, "Sara", msast::List()});
+	must_equal(contents[3], msast::LineDeclaration{msast::NamespacedIdentifier{boost::none, "character"}, "Mark", msast::List()});
+	
+	const std::string test_string = "\n"
+												 "\n"
+    											 "\tSara, frustrated: \"Man, I wish we got more time off. When was the last time we went to the park like this?\"\n"
+												 "\tMark, contemplative: \"Yeah, this blows. I hate having to run off just to get some fresh air.\"\n"
+												 "\tSara : \"There has to be something we can do.\"\n"
+												 "\t@: \"It's not fair for us to take the fall for what *they* did.\"\n"
+												 "\t@, determined: \"That's it. I'm not keeping quiet any longer.\"\n"
+												 "\t\n"
+												 "\n"
+												 "\tscene_change(Park_Conversation_05)\n"
+												 "";
 
-	assert(boost::get<metasyntax::ast::UsingDeclaration>document.contents[0] == )	
+	must_equal(contents[4], msast::BlockDeclaration{msast::NamespacedIdentifier{boost::none, "scene"}, "Park_Conversation_04", msast::List(), test_string});
+
 	
 
 	

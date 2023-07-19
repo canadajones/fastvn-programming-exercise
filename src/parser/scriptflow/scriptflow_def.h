@@ -31,7 +31,7 @@ namespace scriptflow {
         x3::rule<statement_tag, ast::Statement> statement = "statement";
 
         dialogue_type dialogue = "dialogue";
-
+    
 
 
         // Parser definitions
