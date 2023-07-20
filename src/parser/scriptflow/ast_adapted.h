@@ -22,6 +22,13 @@ BOOST_FUSION_ADAPT_STRUCT(
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
+    scriptflow::ast::Annotation,
+    name,
+    arguments
+)
+
+
+BOOST_FUSION_ADAPT_STRUCT(
     scriptflow::ast::Dialogue,
     statements
 )

@@ -20,12 +20,6 @@
 #include "parser/metasyntax/printer.h"
 
 
-#include "versioning/versioning.h"
-#include "parser/metasyntax/version.h"
-
-
-
-
 namespace x3 = boost::spirit::x3;
 namespace ascii = boost::spirit::x3::ascii;
 
@@ -76,7 +70,7 @@ void must_equal(decltype(metasyntax::ast::Document::contents)::value_type value,
 
 int main() {
 	
-	std::string file = "sample.txt";
+	std::string file = "metasyntax.sample.txt";
 	std::string test = loadFileToString(file);
 	
 	using metasyntax::parser::iterator_type;
@@ -96,27 +90,25 @@ int main() {
 	auto result = x3::phrase_parse(start, end, parser, ascii::space, document);
 
 	if (!result) {
-		std::cout << "incomplete parsing\n";
+		std::cout << "Parsing incomplete, test halted." << std::endl;
+		return -1;
 	}
 
-	// verify that script version matches internal parser version
-	std::string versionString = "semver::metasyntax::v" + document.version.prettyprint();
-	feature_versioning::FeatureRequirement requirement{versionString, feature_versioning::default_comparisons::default_version_comparator};
-
-	if (!requirement.isSatisfiedBy(metasyntaxVersion)) {
-		throw std::runtime_error("Metasyntax version does not match script version");
-	}
+	
+	 if (document.version.prettyprint() != "0.0.1") {
+		throw std::runtime_error("VersionCheck: " + document.version.prettyprint() + " does not equal 0.0.1");
+	 }
+	
 
 
 	// ensure that the parser actually matched everything in sample.txt
 	// todo: currently, lists are not checked (recursive and miserable to check)
-	// todo: perhaps write a checker for scriptflow
 	auto& contents = document.contents;
-	namespace msast = metasyntax::ast;
-	must_equal(contents[0], msast::UsingDeclaration{"vnpge"});
-	must_equal(contents[1], msast::LineDeclaration{msast::NamespacedIdentifier{boost::none, "location"}, "Park", msast::List()});
-	must_equal(contents[2], msast::LineDeclaration{msast::NamespacedIdentifier{boost::none, "character"}, "Sara", msast::List()});
-	must_equal(contents[3], msast::LineDeclaration{msast::NamespacedIdentifier{boost::none, "character"}, "Mark", msast::List()});
+	namespace ms = metasyntax::ast;
+	must_equal(contents[0], ms::UsingDeclaration{"vnpge"});
+	must_equal(contents[1], ms::LineDeclaration{ms::NamespacedIdentifier{boost::none, "location"}, "Park", ms::List()});
+	must_equal(contents[2], ms::LineDeclaration{ms::NamespacedIdentifier{boost::none, "character"}, "Sara", ms::List()});
+	must_equal(contents[3], ms::LineDeclaration{ms::NamespacedIdentifier{boost::none, "character"}, "Mark", ms::List()});
 	
 	const std::string test_string = "\n"
 												 "\n"
@@ -130,9 +122,7 @@ int main() {
 												 "\tscene_change(Park_Conversation_05)\n"
 												 "";
 
-	must_equal(contents[4], msast::BlockDeclaration{msast::NamespacedIdentifier{boost::none, "scene"}, "Park_Conversation_04", msast::List(), test_string});
+	must_equal(contents[4], ms::BlockDeclaration{ms::NamespacedIdentifier{boost::none, "scene"}, "Park_Conversation_04", ms::List(), test_string});
 
-	
-
-	
+	std::cout << "Test successful." << std::endl;
 }

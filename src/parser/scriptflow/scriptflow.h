@@ -21,7 +21,7 @@ namespace scriptflow {
 	
 	}
 
-	parser::dialogue_type getdialogue();
+	parser::dialogue_type getDialogueParser();
 
 }
 

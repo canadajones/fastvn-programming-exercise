@@ -38,20 +38,10 @@ namespace scriptflow {
 
 		inline error_handler_base::error_handler_base()
 		{
-			id_map["list"] = "Expression list";
-			id_map["value"] = "Value";
-			id_map["list_key_value"] = "List key value pair";
-			id_map["array"] = "Array";
-			id_map["object_key_value"] = "Object key value pair";
-			id_map["object"] = "Object";
 			id_map["identifier"] = "Identifier";
-			
-			
-			id_map["version"] = "Version identifier";
-			id_map["using_declaration"] = "Using declaration";
-			id_map["line_declaration"] = "Line declaration";
-			id_map["block_declaration"] = "Block declaration";
-			id_map["script"] = "Script";
+			id_map["speaker"] = "Speaker";
+			id_map["statement"] = "Statement";
+			id_map["dialogue"] = "Dialogue";
 			
 		}
 
