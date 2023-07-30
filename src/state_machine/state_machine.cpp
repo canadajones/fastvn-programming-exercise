@@ -34,7 +34,7 @@ class Page {
 
 /**
  * @brief Node in a DAG. Contains a Page.
- * NOT GOOD ENOUGH: needs further refinement of what makes a proper decider; must treat machine and user equally, and allow for the effective passing of named choices to a menu-like decider
+ * 
  */
 class GraphNode {
 	std::vector<std::reference_wrapper<GraphNode>> nexts;
