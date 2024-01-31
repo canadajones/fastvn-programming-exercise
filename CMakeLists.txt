@@ -10,7 +10,7 @@ set(Boost_USE_STATIC_RUNTIME ON)
 set(BOOST_ENABLE_CMAKE ON)
 
 
-find_package(Boost 1.81.0) 
+find_package(Boost 1.84.0) 
 
 cmake_policy(SET CMP0076 NEW)
 
