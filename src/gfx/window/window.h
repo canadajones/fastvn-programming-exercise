@@ -11,6 +11,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_video.h>
 
+
+namespace vnpge {
 namespace gfx {
 namespace window {
 
@@ -78,5 +80,7 @@ class Renderer {
 
 }
 }
+}
+
 
 #endif
