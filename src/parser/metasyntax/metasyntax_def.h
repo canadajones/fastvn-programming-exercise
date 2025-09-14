@@ -59,14 +59,7 @@ namespace metasyntax {
 
 		x3::rule<list_inner_tag, ast::List> inner_list = "list";
 
-		
-	
-		
-
 		x3::rule<list_tag, ast::List> list = "list";
-
-
-		
 
 		// Parser definitions
 		const auto quoted_string = lexeme['"' >> *(char_ - '"') >> '"'];
