@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.13.0)
+
+cmake_policy(SET CMP0076 NEW)
+cmake_policy(SET CMP0144 NEW)
+
+
 project(test1-vn VERSION 0.1.0 LANGUAGES CXX)
 
 
-set(BOOST_ROOT ./extern/boost_1_84_0/)
+set(BOOST_ROOT ./extern/boost_1_89_0/)
 set(Boost_USE_STATIC_LIBS OFF) 
 #set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME ON) 
@@ -10,9 +15,9 @@ set(Boost_USE_STATIC_RUNTIME ON)
 set(BOOST_ENABLE_CMAKE ON)
 
 
-find_package(Boost 1.84.0) 
+find_package(Boost 1.89.0) 
 
-cmake_policy(SET CMP0076 NEW)
+add_subdirectory(extern/SDL EXCLUDE_FROM_ALL)
 
 
 
@@ -34,7 +39,7 @@ target_include_directories(scriptflow_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/sr
 target_include_directories(gfx_sdl_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 
 
-target_link_libraries(gfx_sdl_test SDL2)
+target_link_libraries(gfx_sdl_test SDL3::SDL3)
 
 # Those sweet, sweet designated initialisers force me to use C++20
 set_property(TARGET metasyntax_test PROPERTY CXX_STANDARD 20)

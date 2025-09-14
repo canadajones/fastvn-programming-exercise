@@ -1,15 +1,15 @@
 #ifndef VNPGE_SDL_WINDOW_HEADER
 #define VNPGE_SDL_WINDOW_HEADER
 
-#include <SDL2/SDL_render.h>
+#include <SDL3/SDL_render.h>
 #include <cassert>
 #include <memory>
 #include <stdexcept>
 
 
 #define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_video.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_video.h>
 
 
 namespace vnpge {
@@ -46,7 +46,7 @@ class Window {
 	std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> window;
 	
 	public:
-	Window() : window{SDL_CreateWindow("test", 10, 10, 640, 480, SDL_WINDOW_SHOWN), SDL_DestroyWindow}{
+	Window() : window{SDL_CreateWindow("test", 640, 480, 0), SDL_DestroyWindow}{
 		if (!window) {
 			throw std::runtime_error(SDL_GetError());
 		}		
@@ -64,8 +64,9 @@ class Renderer {
     std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> renderer;
 
     public:
-    Renderer(Window& window) : renderer{SDL_CreateRenderer(window.getWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC), SDL_DestroyRenderer} {
+    Renderer(Window& window) : renderer{SDL_CreateRenderer(window.getWindow(), nullptr), SDL_DestroyRenderer} {
         if (!renderer) {
+			std::cout << SDL_GetError() << std::endl;
             throw std::runtime_error(SDL_GetError());
         }
     }
