@@ -2,8 +2,8 @@
 #define VNPGE_SDL_COMPOSITOR_HEADER
 #include <memory>
 
-#include "SDL2/SDL.h"
-#include "SDL2/SDL_render.h"
+#include "SDL3/SDL_init.h"
+#include "SDL3/SDL_render.h"
 
 #include "gfx/window/window.h"
 #include "util/structures.h"

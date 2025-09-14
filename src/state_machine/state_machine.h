@@ -1,3 +1,6 @@
+#ifndef VNPGE_STATE_MACHINE_HEADER
+#define VNPGE_STATE_MACHINE_HEADER
+
 #include <functional>
 #include <string>
 #include <type_traits>
@@ -54,4 +57,5 @@ class GraphNode {
 
 
 } 
-}
+
+#endif
