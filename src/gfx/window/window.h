@@ -1,16 +1,16 @@
 #ifndef VNPGE_SDL_WINDOW_HEADER
 #define VNPGE_SDL_WINDOW_HEADER
 
-#include <SDL3/SDL_render.h>
-#include <cassert>
-#include <memory>
-#include <stdexcept>
 
+#include <cassert>
+#include <stdexcept>
+#include <iostream>
+#include <memory>
 
 #define SDL_MAIN_HANDLED
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_video.h>
-
+#include <SDL3/SDL_render.h>
 
 namespace vnpge {
 namespace gfx {
@@ -25,7 +25,7 @@ class SDLScope {
 	SDLScope() {
 		assert(!wasInit);
 
-		if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO)) {
+		if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO)) {
 			throw std::runtime_error(SDL_GetError());
 		}
 
