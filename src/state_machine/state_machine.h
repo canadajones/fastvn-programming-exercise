@@ -57,5 +57,6 @@ class GraphNode {
 
 
 } 
+}
 
 #endif
