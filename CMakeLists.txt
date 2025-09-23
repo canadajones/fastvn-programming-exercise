@@ -32,7 +32,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(metasyntax_test tests/metasyntax.test.cpp src/parser/metasyntax/metasyntax.cpp)
 add_executable(scriptflow_test tests/scriptflow.test.cpp src/parser/scriptflow/scriptflow.cpp)
 add_executable(gfx_sdl_test tests/gfx.sdl.test.cpp)
-add_executable(translation_test src/parser/translation.cpp src/parser/scriptflow/scriptflow.cpp src/parser/metasyntax/metasyntax.cpp)
+add_executable(translation_test tests/translation.test.cpp src/parser/translation.cpp src/parser/scriptflow/scriptflow.cpp src/parser/metasyntax/metasyntax.cpp)
 
 # this needs improvement
 target_include_directories(metasyntax_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
