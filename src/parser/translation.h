@@ -46,7 +46,12 @@ inline void decodeScene(const std::string& name, const ms::List& list) {
 // Also, we should probably well-define transitions into and out of the pages; it seems like an important aspect of a FSM.
 // Is it worth going ahead with this structure?
 // We technically have all we need to display something sensible to the screen, so why not go ahead with that first?
-
+// Also, there was the idea of creating a message-passing interface - is that still interesting?
+// Or would a sensible calling hierarchy of graphics and story code work better?
+// We should type up a list of features supported in a MVP, and then branch off from there.
+// The parser is "done", which is good.
+// Perhaps one day we should port it to Boost.Parser
+// I'm not looking into that right now, though. I need to concentrate on boring stuff first.
 
 struct DecodingVisitor {
 	using result_type = void;
