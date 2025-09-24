@@ -44,7 +44,8 @@ inline void decodeScene(const std::string& name, const ms::List& list) {
 // Scriptflow can tease the pages out of the scene blockdecls, but to know to call Scriptflow, we need to register it for the Scene.
 // If we're to go ahead with global, lineal, local page storage, we need Scriptflow to impose that as well.
 // Also, we should probably well-define transitions into and out of the pages; it seems like an important aspect of a FSM.
-
+// Is it worth going ahead with this structure?
+// We technically have all we need to display something sensible to the screen, so why not go ahead with that first?
 
 
 struct DecodingVisitor {
