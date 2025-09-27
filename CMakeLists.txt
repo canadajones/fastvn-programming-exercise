@@ -45,7 +45,7 @@ add_executable(main src/main/main.cpp)
 
 
 # this needs improvement
-include_directories(metasyntax_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 
 
 target_link_libraries(metasyntax_test metasyntax)

@@ -27,31 +27,10 @@ class CharacterLDDecoder : LineDeclarationDecoder {
 	
 };
 
-inline void decodeCharacter(const std::string& name, const ms::List& list) {
+inline void decodeCharacter(const std::string& name, const ms::List& list);
+inline void decodeLocation(const std::string& name, const ms::List& list);
+inline void decodeScene(const std::string& name, const ms::List& list);
 
-}
-
-inline void decodeLocation(const std::string& name, const ms::List& list) {
-
-}
-
-inline void decodeScene(const std::string& name, const ms::List& list) {
-
-}
-
-// We kind of need to know in the Metasyntax parser what the hell these different entities mean: we can't create Pages without knowing what the scenes are,
-// and Metasyntax doesn't know about scenes, only linedecls and blockdecls.
-// Scriptflow can tease the pages out of the scene blockdecls, but to know to call Scriptflow, we need to register it for the Scene.
-// If we're to go ahead with global, lineal, local page storage, we need Scriptflow to impose that as well.
-// Also, we should probably well-define transitions into and out of the pages; it seems like an important aspect of a FSM.
-// Is it worth going ahead with this structure?
-// We technically have all we need to display something sensible to the screen, so why not go ahead with that first?
-// Also, there was the idea of creating a message-passing interface - is that still interesting?
-// Or would a sensible calling hierarchy of graphics and story code work better?
-// We should type up a list of features supported in a MVP, and then branch off from there.
-// The parser is "done", which is good.
-// Perhaps one day we should port it to Boost.Parser
-// I'm not looking into that right now, though. I need to concentrate on boring stuff first.
 
 struct DecodingVisitor {
 	using result_type = void;
@@ -99,23 +78,7 @@ struct DecodingVisitor {
 };
 
 
-inline void begin_peel(ms::Document onion) {
-	
-
-	if (onion.version == ms::DocumentVersion{.major = 0, .minor = 0, .patch = 1}) {
-		DecodingVisitor visitor;
-		visitor.lineDecls.insert({"vnpge.character", &decodeCharacter});
-		visitor.lineDecls.insert({"vnpge.location", &decodeCharacter});
-		for (auto& decl : onion.contents) {
-			boost::apply_visitor(visitor, decl);
-
-		}
-		for (auto&& ns : visitor.knownNamespaces) {
-			std::cout << ns << "\n";
-		}
-	}   
-}
-
+void begin_peel(ms::Document onion);
 
 
 
