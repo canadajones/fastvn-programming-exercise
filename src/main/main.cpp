@@ -23,26 +23,7 @@ int main(int argc, char** argv)  {
 
     // parse file
 	// todo: create dedicated parser function
-	using metasyntax::parser::iterator_type;
-
-	iterator_type start = test.cbegin();
-	iterator_type end = test.cend();
 	
-	using metasyntax::parser::error_handler_type;
-	using metasyntax::parser::error_handler_tag;
-	error_handler_type error_handler(start, end, std::cout, file); 
-
-	const auto parser = x3::with<metasyntax::parser::error_handler_tag>(std::ref(error_handler))[metasyntax::getDocumentParser()];
-
-
-
-	metasyntax::ast::Document document;
-	auto result = x3::phrase_parse(start, end, parser, ascii::space, document);
-
-	if (!result) {
-		std::cout << "Parsing incomplete, test halted." << std::endl;
-		return -1;
-	}
     
    
     
